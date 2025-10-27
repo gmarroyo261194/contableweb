@@ -1,0 +1,46 @@
+{
+  "id": "cc50cbd1-da74-4198-a132-bf2dcad21101",
+  "template": "app-nolayers",
+  "versions": {
+    "AbpFramework": "9.3.5",
+    "AbpStudio": "1.4.1",
+    "TargetDotnetFramework": "net9.0"
+  },
+  "modules": {
+    "ContableWeb": {
+      "path": "ContableWeb.abpmdl"
+    }
+  },
+  "runProfiles": {
+    "Default": {
+      "path": "etc/run-profiles/Default.abprun.json"
+    }
+  },
+  "options": {
+    "httpRequests": {
+      "ignoredUrls": [
+      
+      ]
+    }
+  },
+  "creatingStudioConfiguration": {
+    "template": "app-nolayers",
+    "createdAbpStudioVersion": "1.4.1",
+    "multiTenancy": "false",
+    "runInstallLibs": "true",
+    "useLocalReferences": "false",
+    "uiFramework": "blazor-server",
+    "databaseProvider": "ef",
+    "runDbMigrator": "false",
+    "databaseManagementSystem": "sqlserver",
+    "createInitialMigration": "true",
+    "theme": "leptonx-lite",
+    "themeStyle": "",
+    "themeMenuPlacement": "",
+    "publicWebsite": "",
+    "socialLogin": "false",
+    "selectedLanguages": ["Spanish", ],
+    "defaultLanguage": "Spanish",
+    "createCommand": "abp new ContableWeb -t app-nolayers --ui-framework blazor-server --mobile  --database-provider ef --database-management-system sqlserver --theme leptonx-lite --skip-migrator  --no-tests --without-cms-kit --sample-crud-page --dont-run-bundling --no-multi-tenancy --no-social-logins -no-gdpr -no-openiddict-admin-ui -no-audit-logging -no-file-management -no-language-management -no-text-template-management"
+  }
+}

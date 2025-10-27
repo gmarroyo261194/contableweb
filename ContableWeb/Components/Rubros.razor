@@ -1,0 +1,75 @@
+﻿@page "/rubros"
+@attribute [Authorize(ContableWebPermissions.Rubros.Default)]
+@using ContableWeb.Services.Rubros
+@using ContableWeb.Services.Dtos.Rubros
+@using Volo.Abp.Application.Dtos
+@using ContableWeb.Localization
+@using ContableWeb.Permissions
+@using Microsoft.Extensions.Localization
+@inherits AbpCrudPageBase<IRubroAppService, RubroDto, int, PagedAndSortedResultRequestDto, CreateUpdateRubroDto>
+@inject IStringLocalizer<ContableWebResource> L
+
+<Card>
+    <CardHeader>
+        <Row Class="justify-content-between">
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <CardTitle>@L["Rubros"]</CardTitle>
+            </Column>
+            <Column ColumnSize="ColumnSize.IsAuto">
+                
+                @if (HasCreatePermission)
+                {
+                    <Button Color="Color.Primary"
+                            Clicked="OpenCreateModalAsync">
+                        <Icon Name="IconName.Add"/>
+                        @L["NewRubro"]
+                    </Button>
+                }
+            </Column>
+        </Row>
+    </CardHeader>
+    <CardBody>
+        <DataGrid TItem="RubroDto"
+                  Data="Entities"
+                  ReadData="OnDataGridReadAsync"
+                  CurrentPage="CurrentPage"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  PageSize="PageSize">
+            <DataGridColumns>
+                <DataGridEntityActionsColumn TItem="RubroDto" @ref="@EntityActionsColumn">
+                    <DisplayTemplate>
+                        <EntityActions TItem="RubroDto" EntityActionsColumn="@EntityActionsColumn">
+                            <EntityAction TItem="RubroDto"
+                                          Text="@L["Edit"]"
+                                          Visible="HasUpdatePermission"
+                                          Clicked="() => OpenEditModalAsync(context)" />
+                            <EntityAction TItem="RubroDto"
+                                          Text="@L["Delete"]"
+                                          Visible="HasDeletePermission"
+                                          Clicked="() => DeleteEntityAsync(context)"
+                                          ConfirmationMessage="()=>GetDeleteConfirmationMessage(context)" />
+                        </EntityActions>
+                    </DisplayTemplate>
+                </DataGridEntityActionsColumn>
+                <DataGridColumn TItem="RubroDto"
+                                Field="@nameof(RubroDto.Nombre)"
+                                Caption="@L["Nombre"]"></DataGridColumn>
+                <DataGridColumn TItem="RubroDto"
+                                Field="@nameof(RubroDto.Enabled)"
+                                Caption="@L["Descripcion"]"></DataGridColumn>
+            </DataGridColumns>
+        </DataGrid>
+    </CardBody>
+</Card>
+
+
+@code {
+
+    public Rubros()
+    {
+        CreatePolicyName = ContableWebPermissions.Rubros.Create;
+        UpdatePolicyName = ContableWebPermissions.Rubros.Edit;
+        DeletePolicyName = ContableWebPermissions.Rubros.Delete;
+    }
+}

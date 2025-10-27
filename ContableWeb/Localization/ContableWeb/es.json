@@ -1,0 +1,30 @@
+{
+  "culture": "es",
+  "texts": {
+    "Welcome_Title": "Bienvenido",
+    "Welcome_Text": "Esta es una plantilla de inicio de aplicación minimalista de una sola capa para ABP Framework.",
+    "Menu:Home": "Inicio",
+    "Menu:Books": "Libros",
+    "Menu:ContableWeb": "Contabilidad",
+    "Menu:Facturacion": "Facturación",
+    "Menu:Rubros": "Rubros y Servicios",
+    "Menu:Proveedores": "Proveedores",
+    "Menu:Configuracion": "Configuracion",
+    "Menu:Cobranzas": "Cobranzas",
+    "Enum:BookType.0": "Undefined",
+    "Enum:BookType.1": "Adventure",
+    "Enum:BookType.2": "Biography",
+    "Enum:BookType.3": "Dystopia",
+    "Enum:BookType.4": "Fantastic",
+    "Enum:BookType.5": "Horror",
+    "Enum:BookType.6": "Science",
+    "Enum:BookType.7": "Science fiction",
+    "Enum:BookType.8": "Poetry",
+    "NewRubro": "Nuevo Rubro",
+    "EditRubro": "Editar Rubro",
+    "Permission:Rubros": "Rubros y Servicios",
+    "Permission:Rubros.Create": "Crear nuevos rubros",
+    "Permission:Rubros.Edit": "Editar rubros",
+    "Permission:Rubros.Delete": "Eliminar rubros"
+  }
+}
