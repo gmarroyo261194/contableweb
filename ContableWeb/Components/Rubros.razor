@@ -6,8 +6,10 @@
 @using ContableWeb.Localization
 @using ContableWeb.Permissions
 @using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Components.Web
 @inherits AbpCrudPageBase<IRubroAppService, RubroDto, int, PagedAndSortedResultRequestDto, CreateUpdateRubroDto>
 @inject IStringLocalizer<ContableWebResource> L
+@inject AbpBlazorMessageLocalizerHelper<ContableWebResource> LH
 
 <Card>
     <CardHeader>
@@ -16,7 +18,7 @@
                 <CardTitle>@L["Rubros"]</CardTitle>
             </Column>
             <Column ColumnSize="ColumnSize.IsAuto">
-                
+
                 @if (HasCreatePermission)
                 {
                     <Button Color="Color.Primary"
@@ -43,12 +45,12 @@
                             <EntityAction TItem="RubroDto"
                                           Text="@L["Edit"]"
                                           Visible="HasUpdatePermission"
-                                          Clicked="() => OpenEditModalAsync(context)" />
+                                          Clicked="() => OpenEditModalAsync(context)"/>
                             <EntityAction TItem="RubroDto"
                                           Text="@L["Delete"]"
                                           Visible="HasDeletePermission"
                                           Clicked="() => DeleteEntityAsync(context)"
-                                          ConfirmationMessage="()=>GetDeleteConfirmationMessage(context)" />
+                                          ConfirmationMessage="()=>GetDeleteConfirmationMessage(context)"/>
                         </EntityActions>
                     </DisplayTemplate>
                 </DataGridEntityActionsColumn>
@@ -63,6 +65,39 @@
     </CardBody>
 </Card>
 
+<Modal @ref="@CreateModal">
+    <ModalContent IsCentered="true">
+        <Form>
+            <ModalHeader>
+                <ModalTitle>@L["NewRubro"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateModalAsync"/>
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@CreateValidationsRef" Model="@NewEntity" ValidateOnLoad="false">
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["NameRubro"]</FieldLabel>
+                            <TextEdit @bind-Text="@NewEntity.Nombre">
+                                <Feedback>
+                                    <ValidationError/>
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+                </Validations>
+                <ModalFooter>
+                    <Button Color="Color.Secondary"
+                            Clicked="CloseCreateModalAsync">@L["Cancel"]</Button>
+                    <Button Color="Color.Primary"
+                            Type="@ButtonType.Submit"
+                            PreventDefaultOnSubmit="true"
+                            Clicked="CreateEntityAsync">@L["Save"]</Button>
+                </ModalFooter>
+            </ModalBody>
+        </Form>
+    </ModalContent>
+</Modal>
+
 
 @code {
 
@@ -72,4 +107,5 @@
         UpdatePolicyName = ContableWebPermissions.Rubros.Edit;
         DeletePolicyName = ContableWebPermissions.Rubros.Delete;
     }
+
 }

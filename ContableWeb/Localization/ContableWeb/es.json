@@ -21,7 +21,7 @@
     "Enum:BookType.7": "Science fiction",
     "Enum:BookType.8": "Poetry",
     "NewRubro": "Nuevo Rubro",
-    "EditRubro": "Editar Rubro",
+    "NameRubro": "Nombre del Rubro",
     "Permission:Rubros": "Rubros y Servicios",
     "Permission:Rubros.Create": "Crear nuevos rubros",
     "Permission:Rubros.Edit": "Editar rubros",
