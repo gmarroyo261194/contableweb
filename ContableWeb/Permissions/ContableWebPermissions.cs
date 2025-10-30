@@ -20,4 +20,20 @@ public static class ContableWebPermissions
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
     }
+    
+    public static class Servicios
+    { 
+        public const string Default = GroupName + ".Servicios";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    
+    public static class TiposComprobantes
+    {
+        public const string Default = GroupName + ".TiposComprobantes";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
 }

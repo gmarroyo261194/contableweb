@@ -88,13 +88,29 @@ public class ContableWebMenuContributor : IMenuContributor
                 l["Menu:Facturacion"],
                 icon: "fa fa-file-invoice-dollar",
                 url: "/facturacion"
-            ).AddItem(
+            )
+                .AddItem(
                 new ApplicationMenuItem(
                     "Menu:Rubros",
                     l["Menu:Rubros"],
                     icon: "fa fa-list",
                     url: "/rubros"
-            )));
+            ))
+                .AddItem(
+                    new ApplicationMenuItem(
+                        "Menu:Servicios",
+                        l["Menu:Servicios"],
+                        icon: "fa fa-list",
+                        url: "/servicios"
+                    ))
+                .AddItem(
+                    new ApplicationMenuItem(
+                        "Menu:TipoComprobante",
+                        l["Menu:TipoComprobante"],
+                        icon: "fa fa-list",
+                        url: "/tipo-comprobantes"
+                    ))
+            );
         
         context.Menu.AddItem(
             new ApplicationMenuItem(

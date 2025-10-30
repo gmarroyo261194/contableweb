@@ -57,9 +57,13 @@
                 <DataGridColumn TItem="RubroDto"
                                 Field="@nameof(RubroDto.Nombre)"
                                 Caption="@L["Nombre"]"></DataGridColumn>
-                <DataGridColumn TItem="RubroDto"
-                                Field="@nameof(RubroDto.Enabled)"
-                                Caption="@L["Descripcion"]"></DataGridColumn>
+                @* <DataGridColumn TItem="RubroDto" *@
+                @*                 Field="@nameof(RubroDto.Enabled)" *@
+                @*                 Caption="@L["Descripcion"]"> *@
+                @*     <DisplayTemplate Context="rubro"> *@
+                @*         <Switch TValue="bool" TItem="RubroDto" bind-Checked="@rubro.Enabled" ></Switch> *@
+                @*     </DisplayTemplate> *@
+                @* </DataGridColumn> *@
             </DataGridColumns>
         </DataGrid>
     </CardBody>

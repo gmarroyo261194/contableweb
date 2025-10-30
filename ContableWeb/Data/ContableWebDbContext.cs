@@ -11,13 +11,17 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using ContableWeb.Entities.Books;
 using ContableWeb.Entities.Rubros;
+using ContableWeb.Entities.Servicios;
+using ContableWeb.Entities.TiposComprobantes;
 
 namespace ContableWeb.Data;
 
 public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
 {
-    public DbSet<Book> Books { get; set; }
-    public DbSet<Rubro> Rubros { get; set; }
+    public DbSet<Book> Books { get; set; } = default!;
+    public DbSet<Rubro> Rubros { get; set; } = default!;
+    public DbSet<Servicio> Servicios { get; set; } = default!;
+    public DbSet<TipoComprobante> TiposComprobantes { get; set; } = default!;
 
     private const string DbTablePrefix = "App";
     private const string DbSchema = null;
@@ -58,9 +62,39 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
             b.Property(x => x.Nombre).IsRequired().HasMaxLength(100);
             b.Property(x => x.Enabled).HasDefaultValue(true);
             b.HasIndex(x => x.Nombre).IsUnique();
+
+            // Un Rubro tiene muchos Servicios
+            b.HasMany(r => r.Servicios)
+             .WithOne(s => s.Rubro)
+             .HasForeignKey(s => s.RubroId)
+             .OnDelete(DeleteBehavior.NoAction);
+        });
+        
+        builder.Entity<Servicio>(b =>
+        {
+            b.ToTable(DbTablePrefix + "Servicios",
+                DbSchema);
+            b.ConfigureByConvention(); 
+            b.Property(x => x.Nombre).IsRequired().HasMaxLength(100);
+            b.Property(x => x.Enabled).HasDefaultValue(true);
+            b.HasIndex(x => x.Nombre).IsUnique();
+            b.HasOne<Rubro>()
+                .WithMany()
+                .HasForeignKey(x => x.RubroId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+        
+        builder.Entity<TipoComprobante>(b =>
+        {
+            b.ToTable(DbTablePrefix + "TiposComprobantes",
+                DbSchema);
+            b.ConfigureByConvention(); 
+            b.Property(x => x.Nombre).IsRequired().HasMaxLength(50);
+            b.Property(x => x.Abreviatura).HasMaxLength(5);
+            b.Property(x => x.Enabled).HasDefaultValue(true);
+            b.HasIndex(x => x.Nombre).IsUnique();
         });
         
         /* Configure your own entities here */
     }
 }
-

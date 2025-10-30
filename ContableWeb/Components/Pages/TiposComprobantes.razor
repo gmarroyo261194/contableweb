@@ -1,0 +1,85 @@
+﻿@page "/tipo-comprobantes"
+@using ContableWeb.Localization
+@using ContableWeb.Permissions
+@using ContableWeb.Services.TiposComprobantes
+@using ContableWeb.Services.Dtos.TiposComprobantes
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.Application.Dtos
+@using Volo.Abp.AspNetCore.Components.Web
+@attribute [Authorize(ContableWebPermissions.TiposComprobantes.Default)]
+@inherits AbpCrudPageBase<ITipoComprobanteAppService, TipoComprobanteDto, int, PagedAndSortedResultRequestDto, CreateUpdateTipoComprobanteDto>
+@inject IStringLocalizer<ContableWebResource> L
+@inject AbpBlazorMessageLocalizerHelper<ContableWebResource> LH
+
+<Card>
+    <CardHeader>
+        <Row Class="justify-content-between">
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <CardTitle>@L["TiposComprobantes"]</CardTitle>
+            </Column>
+            <Column ColumnSize="ColumnSize.IsAuto">
+
+                @if (HasCreatePermission)
+                {
+                    <Button Color="Color.Primary"
+                            Clicked="OpenCreateModalAsync">
+                        <Icon Name="IconName.Add"/>
+                        @L["NewTipoComprobante"]
+                    </Button>
+                }
+            </Column>
+        </Row>
+    </CardHeader>
+    <CardBody>
+        <DataGrid TItem="TipoComprobanteDto"
+                  Data="Entities"
+                  ReadData="OnDataGridReadAsync"
+                  CurrentPage="CurrentPage"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  PageSize="PageSize">
+            <DataGridColumns>
+                <DataGridEntityActionsColumn TItem="TipoComprobanteDto" @ref="@EntityActionsColumn">
+                    <DisplayTemplate>
+                        <EntityActions TItem="TipoComprobanteDto" EntityActionsColumn="@EntityActionsColumn">
+                            <EntityAction TItem="TipoComprobanteDto"
+                                          Text="@L["Edit"]"
+                                          Visible="HasUpdatePermission"
+                                          Clicked="() => OpenEditModalAsync(context)"/>
+                            <EntityAction TItem="TipoComprobanteDto"
+                                          Text="@L["Delete"]"
+                                          Visible="HasDeletePermission"
+                                          Clicked="() => DeleteEntityAsync(context)"
+                                          ConfirmationMessage="()=>GetDeleteConfirmationMessage(context)"/>
+                        </EntityActions>
+                    </DisplayTemplate>
+                </DataGridEntityActionsColumn>
+                <DataGridColumn TItem="TipoComprobanteDto"
+                                Field="@nameof(TipoComprobanteDto.Nombre)"
+                                Caption="@L["Nombre"]"></DataGridColumn>
+                <DataGridColumn TItem="TipoComprobanteDto"
+                                Field="@nameof(TipoComprobanteDto.Descripcion)"
+                                Caption="@L["Descripcion"]"></DataGridColumn>
+                <DataGridColumn TItem="TipoComprobanteDto"
+                                Field="@nameof(TipoComprobanteDto.Abreviatura)"
+                                Caption="@L["Codigo"]"></DataGridColumn>
+                <DataGridColumn TItem="TipoComprobanteDto"
+                                Field="@nameof(TipoComprobanteDto.EsFiscal)"
+                                Caption="@L["EsFiscal"]"></DataGridColumn>
+                <DataGridColumn TItem="TipoComprobanteDto"
+                                Field="@nameof(TipoComprobanteDto.Enabled)"
+                                Caption="@L["Activo"]"></DataGridColumn>
+            </DataGridColumns>
+        </DataGrid>
+    </CardBody>
+</Card>
+
+@code {
+
+    public TiposComprobantes()
+    {
+        CreatePolicyName = ContableWebPermissions.TiposComprobantes.Create;
+        UpdatePolicyName = ContableWebPermissions.TiposComprobantes.Edit;
+        DeletePolicyName = ContableWebPermissions.TiposComprobantes.Delete;
+    }
+}

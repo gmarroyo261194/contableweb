@@ -22,8 +22,17 @@ public class ContableWebPermissionDefinitionProvider : PermissionDefinitionProvi
         rubrosPermission.AddChild(ContableWebPermissions.Rubros.Edit, L("Permission:Rubros.Edit"));
         rubrosPermission.AddChild(ContableWebPermissions.Rubros.Delete, L("Permission:Rubros.Delete"));
 
-        //Define your own permissions here. Example:
-        //myGroup.AddPermission(ContableWebPermissions.MyPermission1, L("Permission:MyPermission1"));
+        var serviciosPermission = myGroup.AddPermission(ContableWebPermissions.Servicios.Default, L("Permission:Servicios"));
+        serviciosPermission.AddChild(ContableWebPermissions.Servicios.Create, L("Permission:Servicios.Create"));
+        serviciosPermission.AddChild(ContableWebPermissions.Servicios.Edit, L("Permission:Servicios.Edit"));
+        serviciosPermission.AddChild(ContableWebPermissions.Servicios.Delete, L("Permission:Servicios.Delete"));
+        
+        var tiposComprobantesPermission = myGroup.AddPermission(ContableWebPermissions.TiposComprobantes.Default, L("Permission:TiposComprobantes"));
+        tiposComprobantesPermission.AddChild(ContableWebPermissions.TiposComprobantes.Create, L("Permission:TiposComprobantes.Create"));
+        tiposComprobantesPermission.AddChild(ContableWebPermissions.TiposComprobantes.Edit, L("Permission:TiposComprobantes.Edit"));
+        tiposComprobantesPermission.AddChild(ContableWebPermissions.TiposComprobantes.Delete, L("Permission:TiposComprobantes.Delete"));
+      
+        
     }
 
     private static LocalizableString L(string name)

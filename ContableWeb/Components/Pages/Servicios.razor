@@ -1,0 +1,185 @@
+﻿@page "/Servicios"
+@using ContableWeb.Permissions
+@using ContableWeb.Services.Dtos.Servicios
+@using ContableWeb.Services.Servicios
+@using ContableWeb.Localization
+@using Volo.Abp.AspNetCore.Components.Web
+@using Volo.Abp
+@using Volo.Abp.Application.Dtos
+@attribute [Authorize(ContableWebPermissions.Servicios.Default)]
+@inherits AbpCrudPageBase<IServicioAppService, ServicioDto, int, PagedAndSortedResultRequestDto, CreateUpdateServicioDto>
+@inject AbpBlazorMessageLocalizerHelper<ContableWebResource> Lh
+
+<Card>
+    <CardHeader>
+        <Row Class="justify-content-between">
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <CardTitle>@L["Servicios Facturacion"]</CardTitle>
+            </Column>
+            <Column ColumnSize="ColumnSize.IsAuto">
+                @if (HasCreatePermission)
+                {
+                    <Button Color="Color.Primary"
+                            Clicked="OpenCreateModalAsync">
+                        <Icon Name="IconName.Add"/>
+                        @L["NewServicio"]
+                    </Button>
+                }
+            </Column>
+        </Row>
+    </CardHeader>
+    <CardBody>
+        <DataGrid TItem="ServicioDto"
+                  Data="Entities"
+                  ReadData="OnDataGridReadAsync"
+                  CurrentPage="CurrentPage"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  PageSize="PageSize">
+            <DataGridColumns>
+                <DataGridEntityActionsColumn TItem="ServicioDto" @ref="@EntityActionsColumn">
+                    <DisplayTemplate>
+                        <EntityActions TItem="ServicioDto" EntityActionsColumn="@EntityActionsColumn">
+                            <EntityAction TItem="ServicioDto"
+                                          Text="@L["Edit"]"
+                                          Visible="HasUpdatePermission"
+                                          Clicked="() => OpenEditModalAsync(context)"/>
+                            <EntityAction TItem="ServicioDto"
+                                          Text="@L["Delete"]"
+                                          Visible="HasDeletePermission"
+                                          Clicked="() => DeleteEntityAsync(context)"
+                                          ConfirmationMessage="()=>GetDeleteConfirmationMessage(context)"/>
+                        </EntityActions>
+                    </DisplayTemplate>
+                </DataGridEntityActionsColumn>
+                <DataGridColumn TItem="ServicioDto"
+                                Field="@nameof(ServicioDto.Nombre)"
+                                Caption="@L["Nombre"]"></DataGridColumn>
+                <DataGridColumn TItem="ServicioDto"
+                                Field="@nameof(ServicioDto.RubroNombre)"
+                                Caption="@L["Rubro Asociado"]"></DataGridColumn>
+                <DataGridColumn TItem="ServicioDto"
+                                Field="@nameof(ServicioDto.Enabled)"
+                                Caption="@L["Habilitado"]">
+                    <DisplayTemplate Context="servicio">
+                        <Switch TValue="bool" TItem="ServicioDto" bind-Checked="@servicio.Enabled"></Switch>
+                    </DisplayTemplate>
+                </DataGridColumn>
+            </DataGridColumns>
+        </DataGrid>
+    </CardBody>
+</Card>
+
+<Modal @ref="@CreateModal">
+    <ModalContent IsCentered="true">
+        <Form>
+            <ModalHeader>
+                <ModalTitle>@L["NewServicio"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@CreateValidationsRef" Model="@NewEntity" ValidateOnLoad="false">
+                    <Validation MessageLocalizer="@Lh.Localize">
+                        <Field>
+                            <FieldLabel>@L["NameServicio"]</FieldLabel>
+                            <TextEdit @bind-Text="@NewEntity.Nombre">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                        <Field>
+                            <FieldLabel>@L["Rubro"]</FieldLabel>
+                            <Select TValue="int" @bind-SelectedValue="@NewEntity.RubroId">
+                                @foreach (var r in _rubroLookupList)
+                                {
+                                    <SelectItem TValue="int" Value="@r.Id">@r.Nombre</SelectItem>
+                                }
+                            </Select>
+                        </Field>
+                        <Field>
+                            <FieldLabel>@L["Habilitado"]</FieldLabel>
+                            <Switch TValue="bool" @bind-Checked="@NewEntity.Enabled"></Switch>
+                        </Field>
+                    </Validation>
+                </Validations>
+                <ModalFooter>
+                    <Button Color="Color.Secondary" Clicked="CloseCreateModalAsync">@L["Cancel"]</Button>
+                    <Button Color="Color.Primary" Type="@ButtonType.Submit" PreventDefaultOnSubmit="true" Clicked="CreateEntityAsync">@L["Save"]</Button>
+                </ModalFooter>
+            </ModalBody>
+        </Form>
+    </ModalContent>
+</Modal>
+
+<Modal @ref="@EditModal">
+    <ModalBackdrop />
+    <ModalContent IsCentered="true">
+        <Form>
+            <ModalHeader>
+                <ModalTitle>@EditingEntity.Nombre</ModalTitle>
+                <CloseButton Clicked="CloseEditModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditValidationsRef" Model="@EditingEntity" ValidateOnLoad="false">
+                    <Validation MessageLocalizer="@Lh.Localize">
+                        <Field>
+                            <FieldLabel>@L["NameServicio"]</FieldLabel>
+                            <TextEdit @bind-Text="@EditingEntity.Nombre">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                        <Field>
+                            <FieldLabel>@L["Rubro"]</FieldLabel>
+                            <Select TValue="int" @bind-SelectedValue="@EditingEntity.RubroId">
+                                @foreach (var r in _rubroLookupList)
+                                {
+                                    <SelectItem TValue="int" Value="@r.Id">@r.Nombre</SelectItem>
+                                }
+                            </Select>
+                        </Field>
+                        <Field>
+                            <FieldLabel>@L["Habilitado"]</FieldLabel>
+                            <Switch TValue="bool" @bind-Checked="@EditingEntity.Enabled"></Switch>
+                        </Field>
+                    </Validation>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="CloseEditModalAsync">@L["Cancel"]</Button>
+                <Button Color="Color.Primary" Type="@ButtonType.Submit" PreventDefaultOnSubmit="true" Clicked="UpdateEntityAsync">@L["Save"]</Button>
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@code {
+
+    IReadOnlyList<RubroLookupDto> _rubroLookupList = new List<RubroLookupDto>();
+    
+    public Servicios()
+    {
+        CreatePolicyName = ContableWebPermissions.Servicios.Create;
+        UpdatePolicyName = ContableWebPermissions.Servicios.Edit;
+        DeletePolicyName = ContableWebPermissions.Servicios.Delete;
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _rubroLookupList = (await AppService.GetRubroLookupAsync()).Items;
+    }
+
+    protected override async Task OpenCreateModalAsync()
+    {
+        if (!_rubroLookupList.Any())
+        {
+            throw new UserFriendlyException(message: L["RubroIsRequiredForCreatingServicio"]);
+        }
+        
+        await base.OpenCreateModalAsync();
+        NewEntity.RubroId = _rubroLookupList.First().Id;
+    }
+}

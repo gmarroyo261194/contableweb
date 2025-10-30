@@ -7,7 +7,9 @@
     "Menu:Books": "Libros",
     "Menu:ContableWeb": "Contabilidad",
     "Menu:Facturacion": "Facturación",
-    "Menu:Rubros": "Rubros y Servicios",
+    "Menu:Rubros": "Rubros",
+    "Menu:Servicios": "Servicios Facturables",
+    "Menu:TipoComprobante": "Tipos Comprobantes",
     "Menu:Proveedores": "Proveedores",
     "Menu:Configuracion": "Configuracion",
     "Menu:Cobranzas": "Cobranzas",
@@ -22,9 +24,20 @@
     "Enum:BookType.8": "Poetry",
     "NewRubro": "Nuevo Rubro",
     "NameRubro": "Nombre del Rubro",
-    "Permission:Rubros": "Rubros y Servicios",
+    "NewServicio": "Nuevo Servicio",
+    "NameServicio": "Nombre del Servicio",
+    "Permission:Rubros": "Rubros",
     "Permission:Rubros.Create": "Crear nuevos rubros",
     "Permission:Rubros.Edit": "Editar rubros",
-    "Permission:Rubros.Delete": "Eliminar rubros"
+    "Permission:Rubros.Delete": "Eliminar rubros",
+    "Permission:Servicios": "Servicios",
+    "Permission:Servicios.Create": "Crear nuevos servicios",
+    "Permission:Servicios.Edit": "Editar servicios",
+    "Permission:Servicios.Delete": "Eliminar servicios",
+    "Permission:TiposComprobantes": "Tipos Comprobantes",
+    "Permission:TiposComprobantes.Create": "Crear nuevos tipos de comprobantes",
+    "Permission:TiposComprobantes.Edit": "Editar tipos de comprobantes",
+    "Permission:TiposComprobantes.Delete": "Eliminar tipos de comprobantes",
+    "RubroIsRequiredForCreatingServicio": "El rubro es obligatorio para crear un servicio."
   }
 }
