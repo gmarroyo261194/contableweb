@@ -5,11 +5,14 @@
 @using Volo.Abp.Application.Dtos
 @using ContableWeb.Localization
 @using ContableWeb.Permissions
+@using ContableWeb.Services.Dtos.Servicios
+@using ContableWeb.Services.Servicios
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Components.Web
 @inherits AbpCrudPageBase<IRubroAppService, RubroDto, int, PagedAndSortedResultRequestDto, CreateUpdateRubroDto>
 @inject IStringLocalizer<ContableWebResource> L
 @inject AbpBlazorMessageLocalizerHelper<ContableWebResource> LH
+@inject IServicioAppService ServicioAppService
 
 <Card>
     <CardHeader>
@@ -43,6 +46,9 @@
                     <DisplayTemplate>
                         <EntityActions TItem="RubroDto" EntityActionsColumn="@EntityActionsColumn">
                             <EntityAction TItem="RubroDto"
+                                          Text="@L["Servicios"]"
+                                          Clicked="() => ShowServiciosAsync(context.Id, context.Nombre)" />
+                            <EntityAction TItem="RubroDto"
                                           Text="@L["Edit"]"
                                           Visible="HasUpdatePermission"
                                           Clicked="() => OpenEditModalAsync(context)"/>
@@ -57,13 +63,6 @@
                 <DataGridColumn TItem="RubroDto"
                                 Field="@nameof(RubroDto.Nombre)"
                                 Caption="@L["Nombre"]"></DataGridColumn>
-                @* <DataGridColumn TItem="RubroDto" *@
-                @*                 Field="@nameof(RubroDto.Enabled)" *@
-                @*                 Caption="@L["Descripcion"]"> *@
-                @*     <DisplayTemplate Context="rubro"> *@
-                @*         <Switch TValue="bool" TItem="RubroDto" bind-Checked="@rubro.Enabled" ></Switch> *@
-                @*     </DisplayTemplate> *@
-                @* </DataGridColumn> *@
             </DataGridColumns>
         </DataGrid>
     </CardBody>
@@ -102,14 +101,89 @@
     </ModalContent>
 </Modal>
 
+@* Modal centrado que muestra un Card con header que incluye el nombre del rubro *@
+<Modal @ref="_serviciosModal" Class="_servicios-modal">
+    <ModalContent IsCentered="true">
+        <Card>
+            <CardHeader>
+                <Row Class="justify-content-between">
+                    <Column>
+                        <CardTitle>
+                            @L["Servicios del Rubro {0}", _selectedRubroName]
+                        </CardTitle>
+                    </Column>
+                    <Column ColumnSize="ColumnSize.IsAuto">
+                        <CloseButton Clicked="CloseServiciosModalAsync" />
+                    </Column>
+                </Row>
+            </CardHeader>
+            <CardBody>
+                <DataGrid TItem="ServicioDto" Data="servicios" ShowPager="true" PageSize="10">
+                    <DataGridColumns>
+                        <DataGridColumn TItem="ServicioDto"
+                                        Field="@nameof(ServicioDto.Nombre)"
+                                        Caption="@L["Nombre"]" />
+                        @* Si quieres añadir más columnas, agrégalas aquí (ej. Codigo, Precio, etc.) *@
+                    </DataGridColumns>
+                </DataGrid>
+
+                @* Mensaje si no hay servicios *@
+                @if (servicios == null || servicios.Count == 0)
+                {
+                    <div class="text-center mt-3 text-muted">@L["NoData"]</div>
+                }
+            </CardBody>
+
+            <CardFooter>
+                <Button Color="Color.Secondary" Clicked="CloseServiciosModalAsync">@L["Close"]</Button>
+            </CardFooter>
+        </Card>
+    </ModalContent>
+</Modal>
+
+<style>
+    /* Duplica el ancho del modal específico */
+    ._servicios-modal .modal-dialog {
+        max-width: calc(var(--abp-modal-max-width, 560px) * 2) !important;
+        width: auto !important;
+    }
+</style>
 
 @code {
+    private List<ServicioDto> servicios = [];
+    
+    private Modal _serviciosModal;
+    private string _selectedRubroName = string.Empty;
 
+    private async Task ShowServiciosAsync(int rubroId, string rubroNombre)
+    {
+        _selectedRubroName = rubroNombre;
+        await CargarServiciosDelRubro(rubroId); // reusa tu método existente
+        // Mostrar el modal (API del componente Modal de tu proyecto)
+        await _serviciosModal.Show();
+    }
+
+    private async Task CloseServiciosModalAsync()
+    {
+        await _serviciosModal.Hide();
+    }
+    
     public Rubros()
     {
         CreatePolicyName = ContableWebPermissions.Rubros.Create;
         UpdatePolicyName = ContableWebPermissions.Rubros.Edit;
         DeletePolicyName = ContableWebPermissions.Rubros.Delete;
     }
+    
+    private async Task CargarServiciosDelRubro(int rubroId)
+    {
+        // Si usas paginado:
+        var input = new PagedAndSortedResultRequestDto { MaxResultCount = 20, SkipCount = 0, Sorting = "Nombre" };
+        var page = await ServicioAppService.GetServiciosByRubroIdAsync(rubroId, input);
+        servicios = page.Items.ToList();
 
+        // Si usas la versión ListResultDto:
+        // var resp = await ServicioAppService.GetServiciosByRubroIdAsync(rubroId);
+        // servicios = resp.Items.ToList();
+    }
 }

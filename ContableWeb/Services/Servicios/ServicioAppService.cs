@@ -1,4 +1,5 @@
-﻿using ContableWeb.Entities.Rubros;
+﻿using System.Linq.Expressions;
+using ContableWeb.Entities.Rubros;
 using ContableWeb.Entities.Servicios;
 using ContableWeb.Services.Dtos.Servicios;
 using Volo.Abp.Application.Dtos;
@@ -58,5 +59,31 @@ public class ServicioAppService :
         var servicios = await AsyncExecuter.ToListAsync(filtered);
         var servicioDtos = ObjectMapper.Map<List<Servicio>, List<ServicioDto>>(servicios);
         return new PagedResultDto<ServicioDto>(totalCount, servicioDtos);
+    }
+    
+    public async Task<PagedResultDto<ServicioDto>> GetServiciosByRubroIdAsync(int rubroId, PagedAndSortedResultRequestDto input)
+    {
+        var query = (await Repository.GetQueryableAsync())
+            .Where(s => s.RubroId == rubroId);
+
+        var total = await AsyncExecuter.CountAsync(query);
+
+        var sorting = (input.Sorting ?? "Id").Trim();
+        var parts = sorting.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var propertyName = parts[0];
+        var descending = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        var parameter = Expression.Parameter(typeof(Servicio), "s");
+        var property = Expression.PropertyOrField(parameter, propertyName);
+        var converted = Expression.Convert(property, typeof(object));
+        var keySelector = Expression.Lambda<Func<Servicio, object>>(converted, parameter);
+
+        query = descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
+
+        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
+        
+        var servicios = await AsyncExecuter.ToListAsync(query);
+        var servicioDtos = ObjectMapper.Map<List<Servicio>, List<ServicioDto>>(servicios);
+        return new PagedResultDto<ServicioDto>(total, servicioDtos);
     }
 }

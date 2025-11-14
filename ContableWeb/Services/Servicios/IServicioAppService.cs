@@ -9,4 +9,5 @@ public interface IServicioAppService:
 {
     Task<ListResultDto<RubroLookupDto>> GetRubroLookupAsync();
     Task<PagedResultDto<ServicioDto>> GetServiciosByRubroIdAsync(int rubroId);
+    Task<PagedResultDto<ServicioDto>> GetServiciosByRubroIdAsync(int rubroId, PagedAndSortedResultRequestDto input);
 }
