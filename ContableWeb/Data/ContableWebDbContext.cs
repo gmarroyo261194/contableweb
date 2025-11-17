@@ -10,6 +10,7 @@ using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using ContableWeb.Entities.Books;
+using ContableWeb.Entities.Clientes;
 using ContableWeb.Entities.Rubros;
 using ContableWeb.Entities.Servicios;
 using ContableWeb.Entities.TiposComprobantes;
@@ -22,6 +23,7 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
     public DbSet<Rubro> Rubros { get; set; } = default!;
     public DbSet<Servicio> Servicios { get; set; } = default!;
     public DbSet<TipoComprobante> TiposComprobantes { get; set; } = default!;
+    public DbSet<Cliente> Clientes { get; set; } = default!;
 
     private const string DbTablePrefix = "App";
     private const string DbSchema = null;
@@ -95,6 +97,22 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
             b.HasIndex(x => x.Nombre).IsUnique();
         });
         
-        /* Configure your own entities here */
+        builder.Entity<Cliente>(b =>
+        {
+            b.ToTable(DbTablePrefix + "Clientes",
+                DbSchema);
+            b.ConfigureByConvention(); 
+            b.Property(x => x.Nombre).IsRequired().HasMaxLength(200);
+            b.Property(x => x.TipoDocumento).IsRequired().HasDefaultValue(TipoDoc.DNI);
+            b.Property(x => x.NumeroDocumento).IsRequired().HasMaxLength(20);
+            b.Property(x => x.Domicilio).HasMaxLength(250);
+            b.Property(x => x.Telefono).HasMaxLength(50);
+            b.Property(x => x.Email).HasMaxLength(100);
+            b.Property(x => x.Observaciones).HasMaxLength(500);
+            b.Property(x => x.Enabled).HasDefaultValue(true);
+            b.Property(x => x.CondicionIva).IsRequired().HasDefaultValue(TipoCondIva.ConsumidorFinal);
+            b.HasIndex(x => new { x.TipoDocumento, x.NumeroDocumento }).IsUnique();
+            b.HasIndex(x => x.Nombre);
+        });
     }
 }

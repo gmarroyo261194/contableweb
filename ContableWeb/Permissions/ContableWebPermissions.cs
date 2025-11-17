@@ -36,4 +36,12 @@ public static class ContableWebPermissions
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
     }
+    
+    public static class Clientes
+    {
+        public const string Default = GroupName + ".Clientes";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
 }

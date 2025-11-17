@@ -3,12 +3,14 @@
 @using ContableWeb.Services.Dtos.Servicios
 @using ContableWeb.Services.Servicios
 @using ContableWeb.Localization
+@using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Components.Web
 @using Volo.Abp
 @using Volo.Abp.Application.Dtos
 @attribute [Authorize(ContableWebPermissions.Servicios.Default)]
 @inherits AbpCrudPageBase<IServicioAppService, ServicioDto, int, PagedAndSortedResultRequestDto, CreateUpdateServicioDto>
 @inject AbpBlazorMessageLocalizerHelper<ContableWebResource> Lh
+@inject IStringLocalizer<ContableWebResource> L
 
 <Card>
     <CardHeader>

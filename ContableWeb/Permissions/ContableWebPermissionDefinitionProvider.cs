@@ -32,6 +32,10 @@ public class ContableWebPermissionDefinitionProvider : PermissionDefinitionProvi
         tiposComprobantesPermission.AddChild(ContableWebPermissions.TiposComprobantes.Edit, L("Permission:TiposComprobantes.Edit"));
         tiposComprobantesPermission.AddChild(ContableWebPermissions.TiposComprobantes.Delete, L("Permission:TiposComprobantes.Delete"));
       
+        var clientesPermission = myGroup.AddPermission(ContableWebPermissions.Clientes.Default, L("Permission:Clientes"));
+        clientesPermission.AddChild(ContableWebPermissions.Clientes.Create, L("Permission:Clientes.Create"));
+        clientesPermission.AddChild(ContableWebPermissions.Clientes.Edit, L("Permission:Clientes.Edit"));
+        clientesPermission.AddChild(ContableWebPermissions.Clientes.Delete, L("Permission:Clientes.Delete"));
         
     }
 

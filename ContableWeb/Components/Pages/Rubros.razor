@@ -1,14 +1,5 @@
 ﻿@page "/rubros"
 @attribute [Authorize(ContableWebPermissions.Rubros.Default)]
-@using ContableWeb.Services.Rubros
-@using ContableWeb.Services.Dtos.Rubros
-@using Volo.Abp.Application.Dtos
-@using ContableWeb.Localization
-@using ContableWeb.Permissions
-@using ContableWeb.Services.Dtos.Servicios
-@using ContableWeb.Services.Servicios
-@using Microsoft.Extensions.Localization
-@using Volo.Abp.AspNetCore.Components.Web
 @inherits AbpCrudPageBase<IRubroAppService, RubroDto, int, PagedAndSortedResultRequestDto, CreateUpdateRubroDto>
 @inject IStringLocalizer<ContableWebResource> L
 @inject AbpBlazorMessageLocalizerHelper<ContableWebResource> LH
@@ -128,7 +119,7 @@
                 </DataGrid>
 
                 @* Mensaje si no hay servicios *@
-                @if (servicios == null || servicios.Count == 0)
+                @if (servicios.Count == 0)
                 {
                     <div class="text-center mt-3 text-muted">@L["NoData"]</div>
                 }

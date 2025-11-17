@@ -127,6 +127,13 @@ public class ContableWebMenuContributor : IMenuContributor
                 icon: "fa fa-building",
                 url: "/proveedores"
             ));
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                "Menu:Clientes",
+                l["Menu:Clientes"],
+                icon: "fa fa-person",
+                url: "/clientes"
+            ));
         
         context.Menu.AddItem(
             new ApplicationMenuItem(

@@ -12,6 +12,7 @@
     "Menu:TipoComprobante": "Tipos Comprobantes",
     "Menu:Proveedores": "Proveedores",
     "Menu:Configuracion": "Configuracion",
+    "Menu:Clientes": "Clientes",
     "Menu:Cobranzas": "Cobranzas",
     "Enum:BookType.0": "Undefined",
     "Enum:BookType.1": "Adventure",
@@ -23,21 +24,49 @@
     "Enum:BookType.7": "Science fiction",
     "Enum:BookType.8": "Poetry",
     "NewRubro": "Nuevo Rubro",
+    "NewTipoComprobante": "Nuevo Tipo de Comprobante",
     "NameRubro": "Nombre del Rubro",
     "NewServicio": "Nuevo Servicio",
     "NameServicio": "Nombre del Servicio",
+    "NewCliente": "Nuevo Cliente",
+    "NameCliente": "Nombre del Cliente",
+    
     "Permission:Rubros": "Rubros",
     "Permission:Rubros.Create": "Crear nuevos rubros",
     "Permission:Rubros.Edit": "Editar rubros",
     "Permission:Rubros.Delete": "Eliminar rubros",
+    
     "Permission:Servicios": "Servicios",
     "Permission:Servicios.Create": "Crear nuevos servicios",
     "Permission:Servicios.Edit": "Editar servicios",
     "Permission:Servicios.Delete": "Eliminar servicios",
+    
     "Permission:TiposComprobantes": "Tipos Comprobantes",
     "Permission:TiposComprobantes.Create": "Crear nuevos tipos de comprobantes",
     "Permission:TiposComprobantes.Edit": "Editar tipos de comprobantes",
     "Permission:TiposComprobantes.Delete": "Eliminar tipos de comprobantes",
-    "RubroIsRequiredForCreatingServicio": "El rubro es obligatorio para crear un servicio."
+
+    "Permission:Clientes": "Clientes",
+    "Permission:Clientes.Create": "Crear nuevos clientes",
+    "Permission:Clientes.Edit": "Editar clientes",
+    "Permission:Clientes.Delete": "Eliminar clientes",
+    
+    "RubroIsRequiredForCreatingServicio": "El rubro es obligatorio para crear un servicio.",
+    "NoData":"Sin datos disponibles",
+    
+    "Enum:TipoDoc.0": "DNI",
+    "Enum:TipoDoc.1": "CUIT",
+    "Enum:TipoDoc.2": "Otro",
+    
+    "Enum:TipoCondIva.1": "Responsable Inscripto",
+    "Enum:TipoCondIva.3": "Responsable No Inscripto",
+    "Enum:TipoCondIva.4": "Exento",
+    "Enum:TipoCondIva.5": "Consumidor Final",
+    "Enum:TipoCondIva.6": "Monotributista",
+    "Enum:TipoCondIva.7": "No Categorizado",
+    "Enum:TipoCondIva.8": "Proveedor del Exterior",
+    "Enum:TipoCondIva.9": "Cliente del Exterior",
+    "Enum:TipoCondIva.10": "Iva Liberado - Ley 19.640"
+    
   }
 }
