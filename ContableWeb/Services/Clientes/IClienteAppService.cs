@@ -12,5 +12,5 @@ public interface IClienteAppService:
         PagedAndSortedResultRequestDto, //Used for paging/sorting
         CreateUpdateClienteDto> //Used to create/update a cliente
 {
-    Task<bool> GetDocumentoDuplicadoAsync(TipoDoc tipoDoc, string numeroDoc);
+    Task<bool> GetDocumentoDuplicadoAsync(TipoDoc tipoDoc, string numeroDoc,int id = 0);
 }

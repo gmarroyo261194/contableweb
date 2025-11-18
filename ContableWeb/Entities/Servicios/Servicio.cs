@@ -1,9 +1,13 @@
 ﻿using Volo.Abp.Domain.Entities.Auditing;
 using ContableWeb.Entities.Rubros;
+using Volo.Abp.Auditing;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Threading;
 
 namespace ContableWeb.Entities.Servicios;
 
-public class Servicio: AuditedEntity<int>
+[Audited]
+public class Servicio: AuditedEntity<int>, IEntity<int>
 {
     public int RubroId { get; set; }
     public required string Nombre { get; set; }

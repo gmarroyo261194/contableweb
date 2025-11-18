@@ -1,7 +1,9 @@
-﻿using Volo.Abp.Domain.Entities.Auditing;
+﻿using Volo.Abp.Auditing;
+using Volo.Abp.Domain.Entities.Auditing;
 
 namespace ContableWeb.Entities.Clientes;
 
+[Audited]
 public class Cliente: FullAuditedEntity<int>
 {
     public required string Nombre { get; set; }

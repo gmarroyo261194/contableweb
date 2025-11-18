@@ -4,10 +4,12 @@ using ContableWeb.Entities.Servicios;
 using ContableWeb.Services.Dtos.Servicios;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Repositories;
 
 namespace ContableWeb.Services.Servicios;
 
+[Audited]
 public class ServicioAppService :
     CrudAppService<Servicio, ServicioDto, int, PagedAndSortedResultRequestDto, CreateUpdateServicioDto>,
     IServicioAppService

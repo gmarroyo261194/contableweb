@@ -34,6 +34,8 @@ using Volo.Abp.Emailing;
 using Volo.Abp.Localization;
 using Volo.Abp.Localization.ExceptionHandling;
 using Localization.Resources.AbpUi;
+using Serilog;
+using Volo.Abp.AspNetCore.Auditing;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.OpenIddict;
@@ -49,6 +51,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Volo.Abp.AspNetCore.Components.Server.LeptonXLiteTheme;
 using Volo.Abp.AspNetCore.Components.Server.LeptonXLiteTheme.Bundling;
+using Volo.Abp.Auditing;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
@@ -177,12 +180,34 @@ public class ContableWebModule : AbpModule
         // Add services to the container.
         context.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
-
+        
+        context.Services.AddHttpLogging(x => { x.CombineLogs = true;});
+        context.Services.AddLogging(x =>
+        {
+            x.AddEventLog(options =>
+            {options.SourceName = "ContableWebApp";});
+        });
+        
         if (hostingEnvironment.IsDevelopment())
         {
             context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());
         }
-
+        
+        Configure<AbpAuditingOptions>(options =>
+        {
+            options.IsEnabled = true;
+            options.EntityHistorySelectors.AddAllEntities();
+            options.ApplicationName = "ContableWeb";
+            options.IsEnabledForAnonymousUsers = true;
+            options.IsEnabledForIntegrationServices = true;
+        });
+        
+        // Configure<AbpAspNetCoreAuditingUrlOptions>(options =>
+        // {
+        //     options.IncludeQuery = true;
+        //     options.IncludeHost = true;
+        // });
+        
         ConfigureAuthentication(context);
         ConfigureBundles();
         ConfigureBlazorise(context);
@@ -198,7 +223,7 @@ public class ContableWebModule : AbpModule
         ConfigureVirtualFiles(hostingEnvironment);
         ConfigureEfCore(context);
     }
-
+    
     private void ConfigureHealthChecks(ServiceConfigurationContext context)
     {
         context.Services.AddContableWebHealthChecks();
@@ -408,18 +433,22 @@ public class ContableWebModule : AbpModule
             app.UseMultiTenancy();
         }
 
+        
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAntiforgery();
         app.UseAuthorization();
 
+        app.UseAuditing();
+        
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "ContableWeb API");
         });
-
-        app.UseAuditing();
+        app.UseHttpLogging();
+        app.UseAbpExceptionHandling();
+        app.UseSerilogRequestLogging();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints(builder =>
         {
