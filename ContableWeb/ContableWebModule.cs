@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using ContableWeb.Components;
 using ContableWeb.Data;
+using ContableWeb.Entities.Clientes;
 using ContableWeb.Localization;
 using ContableWeb.Menus;
 using ContableWeb.HealthChecks;
@@ -196,17 +197,21 @@ public class ContableWebModule : AbpModule
         Configure<AbpAuditingOptions>(options =>
         {
             options.IsEnabled = true;
-            options.EntityHistorySelectors.AddAllEntities();
-            options.ApplicationName = "ContableWeb";
+            options.HideErrors = false;
             options.IsEnabledForAnonymousUsers = true;
-            options.IsEnabledForIntegrationServices = true;
+            options.EntityHistorySelectors.AddAllEntities();
+    
+            // options.IsEnabled = true;
+            // options.EntityHistorySelectors.AddAllEntities();
+            // options.ApplicationName = "ContableWeb";
+            // options.IsEnabledForAnonymousUsers = true;
+            // //options.EntityHistorySelectors.Clear();
+            // options.EntityHistorySelectors.Add(new NamedTypeSelector("All", type => true));
+            //
+            // // solo para diagnóstico
+            // options.AlwaysLogSelectors.Add(x => x.EntityChanges.Count != 0 ? Task.FromResult(true) : Task.FromResult(false));
+            // options.SaveEntityHistoryWhenNavigationChanges = true;
         });
-        
-        // Configure<AbpAspNetCoreAuditingUrlOptions>(options =>
-        // {
-        //     options.IncludeQuery = true;
-        //     options.IncludeHost = true;
-        // });
         
         ConfigureAuthentication(context);
         ConfigureBundles();

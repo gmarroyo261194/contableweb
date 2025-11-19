@@ -4,7 +4,7 @@ using Volo.Abp.Domain.Entities.Auditing;
 namespace ContableWeb.Entities.Clientes;
 
 [Audited]
-public class Cliente: FullAuditedEntity<int>
+public class Cliente: FullAuditedAggregateRoot<int>
 {
     public required string Nombre { get; set; }
     public TipoDoc TipoDocumento { get; set; }

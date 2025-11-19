@@ -1,4 +1,6 @@
-﻿namespace ContableWeb.Entities.Clientes;
+﻿using Volo.Abp.Auditing;
+
+namespace ContableWeb.Entities.Clientes;
 
 public enum TipoCondIva
 {

@@ -64,7 +64,7 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
             b.Property(x => x.Nombre).IsRequired().HasMaxLength(100);
             b.Property(x => x.Enabled).HasDefaultValue(true);
             b.HasIndex(x => x.Nombre).IsUnique();
-
+            b.HasQueryFilter(null);
             // Un Rubro tiene muchos Servicios
             b.HasMany(r => r.Servicios)
              .WithOne(s => s.Rubro)
@@ -84,6 +84,7 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
                 .WithMany()
                 .HasForeignKey(x => x.RubroId)
                 .OnDelete(DeleteBehavior.NoAction);
+            b.HasQueryFilter(null);
         });
         
         builder.Entity<TipoComprobante>(b =>
@@ -113,6 +114,7 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
             b.Property(x => x.CondicionIva).IsRequired().HasDefaultValue(TipoCondIva.ConsumidorFinal);
             b.HasIndex(x => new { x.TipoDocumento, x.NumeroDocumento }).IsUnique();
             b.HasIndex(x => x.Nombre);
+            b.HasQueryFilter(null);
         });
     }
 }
