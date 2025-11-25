@@ -321,9 +321,13 @@ public class ContableWebModule : AbpModule
         // Registrar servicios AFIP
         context.Services.AddScoped<ContableWeb.Services.Afip.PowerShellAfipService>();
         context.Services.AddScoped<ContableWeb.Services.Afip.IAfipAuthService, ContableWeb.Services.Afip.AfipAuthService>();
+        context.Services.AddScoped<ContableWeb.Services.Afip.IAfipTokenRepository, ContableWeb.Services.Afip.AfipTokenRepository>();
         
         // Registrar servicio de token global como Singleton para que esté disponible en toda la aplicación
         context.Services.AddSingleton<ContableWeb.Services.Afip.IAfipTokenService, ContableWeb.Services.Afip.AfipTokenService>();
+        
+        // Registrar servicio de facturación electrónica
+        context.Services.AddScoped<ContableWeb.Services.Afip.IFacturacionElectronicaService, ContableWeb.Services.Afip.FacturacionElectronicaService>();
     }
 
     private void ConfigureUrls(IConfiguration configuration)

@@ -14,6 +14,7 @@ using ContableWeb.Entities.Clientes;
 using ContableWeb.Entities.Rubros;
 using ContableWeb.Entities.Servicios;
 using ContableWeb.Entities.TiposComprobantes;
+using ContableWeb.Entities.Afip;
 
 namespace ContableWeb.Data;
 
@@ -24,6 +25,7 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
     public DbSet<Servicio> Servicios { get; set; } = default!;
     public DbSet<TipoComprobante> TiposComprobantes { get; set; } = default!;
     public DbSet<Cliente> Clientes { get; set; } = default!;
+    public DbSet<AfipTokenEntity> AfipTokens { get; set; } = default!;
 
     private const string DbTablePrefix = "App";
     private const string DbSchema = null;

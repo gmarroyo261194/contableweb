@@ -1,0 +1,378 @@
+﻿@page "/afip-token-recovery"
+@using ContableWeb.Services.Afip
+@inject IAfipTokenService AfipTokenService
+@inject IStringLocalizer<ContableWebResource> L
+
+<PageTitle>Recuperación de Tokens AFIP</PageTitle>
+
+<Row>
+    <Column ColumnSize="ColumnSize.Is12">
+        <Card>
+            <CardHeader>
+                <CardTitle>
+                    <Icon Name="IconName.Sync" Class="me-2"/>
+                    Recuperación de Tokens AFIP Existentes
+                </CardTitle>
+            </CardHeader>
+            <CardBody>
+                <Alert Color="Color.Info">
+                    <Icon Name="IconName.InfoCircle" Class="me-2"/>
+                    <strong>¿Qué es "CEE ya posee un TA válido"?</strong><br/>
+                    Este mensaje indica que AFIP ya tiene un Token de Acceso (TA) válido para tu CUIT y el servicio solicitado.
+                    Esto puede ocurrir cuando la aplicación se reinicia pero el token sigue siendo válido en AFIP.
+                </Alert>
+
+                <Alert Color="Color.Warning">
+                    <Icon Name="IconName.ExclamationTriangle" Class="me-2"/>
+                    <strong>Problema común:</strong> Después de reiniciar la aplicación, los tokens se pierden de memoria
+                    pero siguen siendo válidos en AFIP, causando este error al intentar generar uno nuevo.
+                </Alert>
+
+                <Alert Color="Color.Success">
+                    <Icon Name="IconName.Check" Class="me-2"/>
+                    <strong>Solución implementada:</strong> Esta aplicación guarda los tokens en base de datos
+                    y los recupera automáticamente al reiniciar.
+                </Alert>
+            </CardBody>
+        </Card>
+    </Column>
+</Row>
+
+<!-- Demostración paso a paso -->
+<Row Class="mt-4">
+    <Column ColumnSize="ColumnSize.Is8">
+        <Card>
+            <CardHeader>
+                <CardTitle>Demostración: Cómo funciona la recuperación</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <div class="d-flex flex-column gap-3">
+                    <div class="step-card">
+                        <div class="d-flex align-items-center mb-2">
+                            <Badge Color="Color.Primary" Class="me-2">1</Badge>
+                            <h6 class="mb-0">Verificar tokens en memoria</h6>
+                        </div>
+                        <p class="text-muted mb-2">Primero se buscan tokens válidos en la memoria de la aplicación.</p>
+                        <Button Color="Color.Secondary" Size="Size.Small" Clicked="VerificarTokensEnMemoria">
+                            <Icon Name="IconName.Memory"/> Verificar Memoria
+                        </Button>
+                        @if (_resultadosPasos.ContainsKey(1))
+                        {
+                            <div class="mt-2">
+                                <small class="@(_resultadosPasos[1].exitoso ? "text-success" : "text-warning")">
+                                    @_resultadosPasos[1].mensaje
+                                </small>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="step-card">
+                        <div class="d-flex align-items-center mb-2">
+                            <Badge Color="Color.Primary" Class="me-2">2</Badge>
+                            <h6 class="mb-0">Buscar en base de datos</h6>
+                        </div>
+                        <p class="text-muted mb-2">Si no hay tokens en memoria, se buscan en la base de datos.</p>
+                        <Button Color="Color.Info" Size="Size.Small" Clicked="BuscarEnBaseDatos" Disabled="_isLoading">
+                            <Icon Name="IconName.Bars"/> Buscar en BD
+                        </Button>
+                        @if (_resultadosPasos.ContainsKey(2))
+                        {
+                            <div class="mt-2">
+                                <small class="@(_resultadosPasos[2].exitoso ? "text-success" : "text-warning")">
+                                    @_resultadosPasos[2].mensaje
+                                </small>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="step-card">
+                        <div class="d-flex align-items-center mb-2">
+                            <Badge Color="Color.Primary" Class="me-2">3</Badge>
+                            <h6 class="mb-0">Intentar generar nuevo token</h6>
+                        </div>
+                        <p class="text-muted mb-2">Si no se encuentra ningún token válido, se intenta generar uno nuevo.</p>
+                        <Button Color="Color.Warning" Size="Size.Small" Clicked="IntentarGenerarNuevo" Disabled="_isLoading">
+                            <Icon Name="IconName.Add"/> Generar Nuevo
+                        </Button>
+                        @if (_resultadosPasos.ContainsKey(3))
+                        {
+                            <div class="mt-2">
+                                <small class="@(_resultadosPasos[3].exitoso ? "text-success" : "text-danger")">
+                                    @_resultadosPasos[3].mensaje
+                                </small>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="step-card">
+                        <div class="d-flex align-items-center mb-2">
+                            <Badge Color="Color.Primary" Class="me-2">4</Badge>
+                            <h6 class="mb-0">Manejo del error "TA válido"</h6>
+                        </div>
+                        <p class="text-muted mb-2">Si AFIP responde que ya existe un TA válido, se espera y se busca de nuevo.</p>
+                        <Button Color="Color.Danger" Size="Size.Small" Clicked="SimularErrorTAValido" Disabled="_isLoading">
+                            <Icon Name="IconName.ExclamationTriangle"/> Simular Error
+                        </Button>
+                        @if (_resultadosPasos.ContainsKey(4))
+                        {
+                            <div class="mt-2">
+                                <small class="@(_resultadosPasos[4].exitoso ? "text-success" : "text-info")">
+                                    @_resultadosPasos[4].mensaje
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="text-center">
+                    <Button Color="Color.Success" Clicked="EjecutarProcesoCompleto" Disabled="_isLoading" Size="Size.Large">
+                        <Icon Name="@(_isLoading ? IconName.Backward : IconName.Play)"/> 
+                        @(_isLoading ? "Ejecutando..." : "Ejecutar Proceso Completo")
+                    </Button>
+                </div>
+
+                @if (_isLoading)
+                {
+                    <div class="text-center mt-3">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        <span>@_mensajeCarga</span>
+                    </div>
+                }
+            </CardBody>
+        </Card>
+    </Column>
+
+    <Column ColumnSize="ColumnSize.Is4">
+        <Card>
+            <CardHeader>
+                <CardTitle>Estado Actual</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <h6>Tokens en Memoria:</h6>
+                @if (_tokensEnMemoria.Any())
+                {
+                    @foreach (var token in _tokensEnMemoria)
+                    {
+                        <div class="mb-2">
+                            <Badge Color="@(token.Value.IsExpired ? Color.Danger : Color.Success)">
+                                @token.Key
+                            </Badge>
+                            <small class="d-block text-muted">
+                                @(token.Value.IsExpired ? "Expirado" : $"Válido por {token.Value.TimeToExpiry.TotalMinutes:F0}m")
+                            </small>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No hay tokens en memoria</p>
+                }
+
+                <hr />
+
+                <h6>Último Resultado:</h6>
+                @if (!string.IsNullOrEmpty(_ultimoResultado))
+                {
+                    <Alert Color="@(_ultimoExitoso ? Color.Success : Color.Warning)" Class="p-2">
+                        <small>@_ultimoResultado</small>
+                    </Alert>
+                }
+                else
+                {
+                    <p class="text-muted">Ejecuta alguna acción para ver resultados</p>
+                }
+            </CardBody>
+        </Card>
+
+        <!-- Instrucciones -->
+        <Card Class="mt-4">
+            <CardHeader>
+                <CardTitle>💡 Guía Rápida</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <div class="small">
+                    <p><strong>Si ves "CEE ya posee un TA válido":</strong></p>
+                    <ol class="mb-0">
+                        <li>Ve al <a href="/afip-dashboard">Dashboard AFIP</a></li>
+                        <li>Haz clic en "Buscar Existente"</li>
+                        <li>El sistema recuperará el token de la BD</li>
+                        <li>Si no funciona, espera 30 segundos y reintenta</li>
+                    </ol>
+                </div>
+            </CardBody>
+        </Card>
+    </Column>
+</Row>
+
+<style>
+    .step-card {
+        padding: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 0.375rem;
+        background-color: #f8f9fa;
+    }
+
+    .step-card .badge {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+</style>
+
+@code {
+    private Dictionary<int, (bool exitoso, string mensaje)> _resultadosPasos = new();
+    private Dictionary<string, AfipToken> _tokensEnMemoria = new();
+    private bool _isLoading = false;
+    private string _mensajeCarga = "";
+    private string _ultimoResultado = "";
+    private bool _ultimoExitoso = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ActualizarEstado();
+    }
+
+    private async Task ActualizarEstado()
+    {
+        // Obtener tokens actuales en memoria
+        _tokensEnMemoria.Clear();
+        
+        var servicios = new[] { "wsfe", "ws_sr_constancia_inscripcion", "wsaa" };
+        foreach (var servicio in servicios)
+        {
+            var token = AfipTokenService.GetCurrentToken(servicio);
+            if (token != null)
+            {
+                _tokensEnMemoria[servicio] = token;
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task VerificarTokensEnMemoria()
+    {
+        await ActualizarEstado();
+        
+        var mensaje = _tokensEnMemoria.Any() 
+            ? $"Se encontraron {_tokensEnMemoria.Count} tokens en memoria"
+            : "No hay tokens en memoria";
+            
+        _resultadosPasos[1] = (_tokensEnMemoria.Any(), mensaje);
+        StateHasChanged();
+    }
+
+    private async Task BuscarEnBaseDatos()
+    {
+        _isLoading = true;
+        _mensajeCarga = "Buscando tokens en base de datos...";
+        StateHasChanged();
+
+        try
+        {
+            var tokenRecuperado = await AfipTokenService.IntentarRecuperarTokenExistenteAsync("wsfe");
+            
+            if (tokenRecuperado != null && !tokenRecuperado.IsExpired)
+            {
+                _resultadosPasos[2] = (true, $"Token válido encontrado en BD para wsfe (expira en {tokenRecuperado.TimeToExpiry.TotalMinutes:F0} min)");
+                await ActualizarEstado();
+            }
+            else
+            {
+                _resultadosPasos[2] = (false, "No se encontró token válido en BD");
+            }
+        }
+        catch (Exception ex)
+        {
+            _resultadosPasos[2] = (false, $"Error buscando en BD: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task IntentarGenerarNuevo()
+    {
+        _isLoading = true;
+        _mensajeCarga = "Intentando generar nuevo token...";
+        StateHasChanged();
+
+        try
+        {
+            var nuevoToken = await AfipTokenService.RefreshTokenAsync("wsfe");
+            _resultadosPasos[3] = (true, "Nuevo token generado exitosamente");
+            await ActualizarEstado();
+        }
+        catch (AfipTokenAlreadyExistsException)
+        {
+            _resultadosPasos[3] = (false, "AFIP respondió: 'CEE ya posee un TA válido'");
+        }
+        catch (Exception ex)
+        {
+            _resultadosPasos[3] = (false, $"Error generando token: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SimularErrorTAValido()
+    {
+        _isLoading = true;
+        _mensajeCarga = "Simulando manejo del error...";
+        StateHasChanged();
+
+        try
+        {
+            // Simular espera de 30 segundos (reducido a 3 para demo)
+            await Task.Delay(3000);
+            _resultadosPasos[4] = (true, "Sistema esperó 30s y buscó token existente");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task EjecutarProcesoCompleto()
+    {
+        _isLoading = true;
+        _mensajeCarga = "Ejecutando proceso completo...";
+        _resultadosPasos.Clear();
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine("=== INICIANDO PROCESO COMPLETO DE RECUPERACIÓN ===");
+            
+            var token = await AfipTokenService.GetValidTokenAsync("wsfe");
+            
+            _ultimoResultado = $"✅ Token obtenido exitosamente! Expira en {token.TimeToExpiry.TotalMinutes:F0} minutos";
+            _ultimoExitoso = true;
+            
+            Console.WriteLine("✅ Proceso completo exitoso");
+            await ActualizarEstado();
+        }
+        catch (Exception ex)
+        {
+            _ultimoResultado = $"❌ Error en proceso completo: {ex.Message}";
+            _ultimoExitoso = false;
+            Console.WriteLine($"❌ Error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

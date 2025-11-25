@@ -1,0 +1,443 @@
+﻿@page "/facturas-tipo-c"
+@using ContableWeb.Components.Shared
+@using ContableWeb.Services.Afip
+@using ContableWeb.Services.Afip.WSFEv1
+@inject IFacturacionElectronicaService FacturacionService
+@inject IStringLocalizer<ContableWebResource> L
+
+<PageTitle>Facturas Tipo C - Consumidor Final</PageTitle>
+
+<Row>
+    <Column ColumnSize="ColumnSize.Is12">
+        <Card>
+            <CardHeader>
+                <CardTitle>
+                    <Icon Name="IconName.FilePdf" Class="me-2"/>
+                    Generar Factura Tipo C (Consumidor Final)
+                </CardTitle>
+            </CardHeader>
+            <CardBody>
+                <Alert Color="Color.Info">
+                    <Icon Name="IconName.InfoCircle" Class="me-2"/>
+                    <strong>Factura Tipo C:</strong> Para consumidores finales. No requiere datos del cliente como CUIT/DNI.
+                    Se usa el código 99 (Consumidor Final) automáticamente.
+                </Alert>
+            </CardBody>
+        </Card>
+    </Column>
+</Row>
+
+<!-- Formulario de factura -->
+<Row Class="mt-4">
+    <Column ColumnSize="ColumnSize.Is8">
+        <Card>
+            <CardHeader>
+                <CardTitle>Datos de la Factura</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <Validations @ref="validaciones" Model="@_datosFactura" ValidateOnLoad="false">
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is6">
+                            <Field>
+                                <FieldLabel>Punto de Venta</FieldLabel>
+                                <NumericEdit TValue="int" @bind-Value="_datosFactura.PuntoVenta" Min="1" Max="9999" />
+                            </Field>
+                        </Column>
+                        <Column ColumnSize="ColumnSize.Is6">
+                            <Field>
+                                <FieldLabel>Tipo</FieldLabel>
+                                <Select TValue="bool" @bind-SelectedValue="_datosFactura.EsServicio">
+                                    <SelectItem Value="false">Productos</SelectItem>
+                                    <SelectItem Value="true">Servicios</SelectItem>
+                                </Select>
+                            </Field>
+                        </Column>
+                    </Row>
+
+                    <!-- Datos del Cliente -->
+                    <Row Class="mt-3">
+                        <Column ColumnSize="ColumnSize.Is12">
+                            <h5>Datos del Cliente (Opcional para Factura C)</h5>
+                        </Column>
+                    </Row>
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is6">
+                            <Field>
+                                <FieldLabel>Nombre/Razón Social</FieldLabel>
+                                <TextEdit @bind-Text="_datosFactura.Cliente.Nombre" />
+                            </Field>
+                        </Column>
+                        <Column ColumnSize="ColumnSize.Is6">
+                            <Field>
+                                <FieldLabel>Dirección</FieldLabel>
+                                <TextEdit @bind-Text="_datosFactura.Cliente.Direccion" />
+                            </Field>
+                        </Column>
+                    </Row>
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is6">
+                            <Field>
+                                <FieldLabel>Teléfono</FieldLabel>
+                                <TextEdit @bind-Text="_datosFactura.Cliente.Telefono" />
+                            </Field>
+                        </Column>
+                        <Column ColumnSize="ColumnSize.Is6">
+                            <Field>
+                                <FieldLabel>Email</FieldLabel>
+                                <TextEdit @bind-Text="_datosFactura.Cliente.Email" />
+                            </Field>
+                        </Column>
+                    </Row>
+
+                    <!-- Fechas para servicios -->
+                    @if (_datosFactura.EsServicio)
+                    {
+                        <Row Class="mt-3">
+                            <Column ColumnSize="ColumnSize.Is12">
+                                <h5>Fechas de Servicio (Requerido para servicios)</h5>
+                            </Column>
+                        </Row>
+                        <Row>
+                            <Column ColumnSize="ColumnSize.Is6">
+                                <Field>
+                                    <FieldLabel>Fecha Desde</FieldLabel>
+                                    <DateEdit TValue="DateTime?" @bind-Date="_datosFactura.FechaServicioDesde" />
+                                </Field>
+                            </Column>
+                            <Column ColumnSize="ColumnSize.Is6">
+                                <Field>
+                                    <FieldLabel>Fecha Hasta</FieldLabel>
+                                    <DateEdit TValue="DateTime?" @bind-Date="_datosFactura.FechaServicioHasta" />
+                                </Field>
+                            </Column>
+                        </Row>
+                    }
+
+                    <!-- Items de la factura -->
+                    <Row Class="mt-3">
+                        <Column ColumnSize="ColumnSize.Is12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5>Items de la Factura</h5>
+                                <Button Color="Color.Primary" Size="Size.Small" Clicked="AgregarItem">
+                                    <Icon Name="IconName.Add"/> Agregar Item
+                                </Button>
+                            </div>
+                        </Column>
+                    </Row>
+
+                    @if (_datosFactura.Items.Any())
+                    {
+                        <Row Class="mt-2">
+                            <Column ColumnSize="ColumnSize.Is12">
+                                <Table Striped="true" Bordered="true" Hoverable="true">
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHeaderCell>Descripción</TableHeaderCell>
+                                            <TableHeaderCell>Cantidad</TableHeaderCell>
+                                            <TableHeaderCell>Precio Unit.</TableHeaderCell>
+                                            <TableHeaderCell>IVA %</TableHeaderCell>
+                                            <TableHeaderCell>Total</TableHeaderCell>
+                                            <TableHeaderCell>Acciones</TableHeaderCell>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        @foreach (var item in _datosFactura.Items.Select((item, index) => new { item, index }))
+                                        {
+                                            <TableRow>
+                                                <TableRowCell>
+                                                    <TextEdit @bind-Text="item.item.Descripcion" />
+                                                </TableRowCell>
+                                                <TableRowCell>
+                                                    <NumericEdit TValue="decimal" @bind-Value="item.item.Cantidad" Min="0" Step="0.01m" />
+                                                </TableRowCell>
+                                                <TableRowCell>
+                                                    <NumericEdit TValue="decimal" @bind-Value="item.item.PrecioUnitario" Min="0" Step="0.01m" />
+                                                </TableRowCell>
+                                                <TableRowCell>
+                                                    <NumericEdit TValue="decimal" @bind-Value="item.item.AlicuotaIVA" Min="0" Max="100" Step="0.01m" />
+                                                </TableRowCell>
+                                                <TableRowCell>
+                                                    <strong>$@item.item.ImporteTotal.ToString("F2")</strong>
+                                                </TableRowCell>
+                                                <TableRowCell>
+                                                    <Button Color="Color.Danger" Size="Size.Small" 
+                                                            Clicked="() => EliminarItem(item.index)">
+                                                        <Icon Name="IconName.Delete"/>
+                                                    </Button>
+                                                </TableRowCell>
+                                            </TableRow>
+                                        }
+                                    </TableBody>
+                                </Table>
+                            </Column>
+                        </Row>
+                        
+                        <Row Class="mt-2">
+                            <Column ColumnSize="ColumnSize.Is12">
+                                <div class="text-end">
+                                    <h4>Total: <span class="text-primary">$@_datosFactura.ImporteTotal.ToString("F2")</span></h4>
+                                </div>
+                            </Column>
+                        </Row>
+                    }
+                    else
+                    {
+                        <Alert Color="Color.Warning" Class="mt-2">
+                            <Icon Name="IconName.ExclamationTriangle" Class="me-2"/>
+                            Debe agregar al menos un item para generar la factura.
+                        </Alert>
+                    }
+
+                    <!-- Observaciones -->
+                    <Row Class="mt-3">
+                        <Column ColumnSize="ColumnSize.Is12">
+                            <Field>
+                                <FieldLabel>Observaciones</FieldLabel>
+                                <MemoEdit @bind-Text="_datosFactura.Observaciones" Rows="3" />
+                            </Field>
+                        </Column>
+                    </Row>
+                </Validations>
+
+                <!-- Botones de acción -->
+                <Row Class="mt-4">
+                    <Column ColumnSize="ColumnSize.Is12">
+                        <div class="d-flex justify-content-between">
+                            <Button Color="Color.Info" Clicked="VerificarConexion" Disabled="_isProcessing">
+                                <Icon Name="IconName.Wifi"/> Verificar Conexión AFIP
+                            </Button>
+                            <div>
+                                <Button Color="Color.Secondary" Clicked="LimpiarFormulario" Disabled="_isProcessing" Class="me-2">
+                                    <Icon Name="IconName.ArrowAltCircleDown"/> Limpiar
+                                </Button>
+                                <Button Color="Color.Success" Clicked="GenerarFactura" 
+                                        Disabled="_isProcessing || !_datosFactura.Items.Any()">
+                                    <Icon Name="@(_isProcessing ? IconName.ArrowAltCircleDown : IconName.FilePdf)"/> 
+                                    @(_isProcessing ? "Generando..." : "Generar Factura")
+                                </Button>
+                            </div>
+                        </div>
+                    </Column>
+                </Row>
+            </CardBody>
+        </Card>
+    </Column>
+
+    <!-- Panel de estado y resultado -->
+    <Column ColumnSize="ColumnSize.Is4">
+        <AfipTokenStatus ServiceId="wsfe" ShowTokenDetails="false" />
+        
+        @if (_ultimoResultado != null)
+        {
+            <Card Class="mt-4">
+                <CardHeader>
+                    <CardTitle>
+                        <Icon Name="@(_ultimoResultado.Exitoso ? IconName.Check : IconName.Times)" 
+                              Color="@(_ultimoResultado.Exitoso ? Color.Success : Color.Danger)" Class="me-2"/>
+                        Resultado
+                    </CardTitle>
+                </CardHeader>
+                <CardBody>
+                    @if (_ultimoResultado.Exitoso)
+                    {
+                        <Alert Color="Color.Success">
+                            <h6>¡Factura generada exitosamente!</h6>
+                            <div><strong>Número:</strong> @_ultimoResultado.NumeroComprobante</div>
+                            <div><strong>CAE:</strong> @_ultimoResultado.CAE</div>
+                            <div><strong>Vence:</strong> @_ultimoResultado.FechaVencimientoCAE</div>
+                            <div><strong>Procesado:</strong> @_ultimoResultado.FechaProceso</div>
+                        </Alert>
+                        
+                        @if (_ultimoResultado.Observaciones.Any())
+                        {
+                            <Alert Color="Color.Warning">
+                                <h6>Observaciones:</h6>
+                                <ul>
+                                    @foreach (var obs in _ultimoResultado.Observaciones)
+                                    {
+                                        <li>@obs</li>
+                                    }
+                                </ul>
+                            </Alert>
+                        }
+                    }
+                    else
+                    {
+                        <Alert Color="Color.Danger">
+                            <h6>Error generando factura</h6>
+                            <div>@_ultimoResultado.Error</div>
+                            
+                            @if (_ultimoResultado.Errores.Any())
+                            {
+                                <ul class="mt-2">
+                                    @foreach (var error in _ultimoResultado.Errores)
+                                    {
+                                        <li>@error</li>
+                                    }
+                                </ul>
+                            }
+                        </Alert>
+                    }
+                </CardBody>
+            </Card>
+        }
+
+        @if (_tiposComprobante.Any())
+        {
+            <Card Class="mt-4">
+                <CardHeader>
+                    <CardTitle>Tipos de Comprobante Disponibles</CardTitle>
+                </CardHeader>
+                <CardBody>
+                    <div class="small">
+                        @foreach (var tipo in _tiposComprobante.Take(5))
+                        {
+                            <div>@tipo.Id - @tipo.Descripcion</div>
+                        }
+                    </div>
+                </CardBody>
+            </Card>
+        }
+    </Column>
+</Row>
+
+@code {
+    private DatosFacturaTipoC _datosFactura = new();
+    private FacturaElectronicaResult? _ultimoResultado;
+    private List<TipoComprobanteInfo> _tiposComprobante = new();
+    private bool _isProcessing = false;
+    private Validations? validaciones;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Inicializar con datos por defecto
+        _datosFactura = new DatosFacturaTipoC
+        {
+            PuntoVenta = 1,
+            EsServicio = false,
+            Cliente = new DatosCliente
+            {
+                Nombre = "Consumidor Final"
+            }
+        };
+
+        // Agregar un item de ejemplo
+        AgregarItem();
+
+        // Cargar tipos de comprobante
+        await CargarTiposComprobante();
+    }
+
+    private void AgregarItem()
+    {
+        _datosFactura.Items.Add(new ItemFactura
+        {
+            Descripcion = "Producto/Servicio",
+            Cantidad = 1,
+            PrecioUnitario = 100.00m,
+            AlicuotaIVA = 21
+        });
+        StateHasChanged();
+    }
+
+    private void EliminarItem(int index)
+    {
+        if (index >= 0 && index < _datosFactura.Items.Count)
+        {
+            _datosFactura.Items.RemoveAt(index);
+            StateHasChanged();
+        }
+    }
+
+    private async Task GenerarFactura()
+    {
+        if (_datosFactura.Items.Count == 0)
+        {
+            return;
+        }
+
+        _isProcessing = true;
+        _ultimoResultado = null;
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine("=== INICIANDO GENERACIÓN DE FACTURA TIPO C ===");
+            
+            _ultimoResultado = await FacturacionService.GenerarFacturaTipoCAsync(_datosFactura);
+            
+            Console.WriteLine($"Resultado: {(_ultimoResultado.Exitoso ? "EXITOSO" : "ERROR")}");
+            
+            if (_ultimoResultado.Exitoso)
+            {
+                Console.WriteLine($"CAE obtenido: {_ultimoResultado.CAE}");
+                Console.WriteLine($"Número de factura: {_ultimoResultado.NumeroComprobante}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Excepción generando factura: {ex.Message}");
+            _ultimoResultado = new FacturaElectronicaResult
+            {
+                Exitoso = false,
+                Error = $"Error: {ex.Message}",
+                Excepcion = ex
+            };
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task VerificarConexion()
+    {
+        try
+        {
+            var conectado = await FacturacionService.VerificarConexionAsync();
+            
+            if (conectado)
+            {
+                Console.WriteLine("✅ Conexión con AFIP WSFEv1 exitosa");
+            }
+            else
+            {
+                Console.WriteLine("❌ No se pudo conectar con AFIP WSFEv1");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error verificando conexión: {ex.Message}");
+        }
+    }
+
+    private async Task CargarTiposComprobante()
+    {
+        try
+        {
+            _tiposComprobante = await FacturacionService.ObtenerTiposComprobanteAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando tipos de comprobante: {ex.Message}");
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        _datosFactura = new DatosFacturaTipoC
+        {
+            PuntoVenta = 1,
+            EsServicio = false,
+            Cliente = new DatosCliente
+            {
+                Nombre = "Consumidor Final"
+            }
+        };
+        
+        _ultimoResultado = null;
+        StateHasChanged();
+    }
+}

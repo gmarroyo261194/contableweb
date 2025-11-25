@@ -49,6 +49,11 @@ namespace ContableWeb.Services.Afip
         /// Evento que se dispara cuando hay un error obteniendo el token
         /// </summary>
         event EventHandler<AfipTokenErrorEventArgs>? TokenError;
+
+        /// <summary>
+        /// Intenta recuperar un token válido existente sin generar uno nuevo
+        /// </summary>
+        Task<AfipToken?> IntentarRecuperarTokenExistenteAsync(string serviceId = "wsfe");
     }
 
     /// <summary>

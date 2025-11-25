@@ -110,6 +110,13 @@ public class ContableWebMenuContributor : IMenuContributor
                         icon: "fa fa-list",
                         url: "/tipo-comprobantes"
                     ))
+                .AddItem(
+                    new ApplicationMenuItem(
+                        "Menu:FacturasTipoC",
+                        "Facturas Tipo C",
+                        icon: "fa fa-file-invoice",
+                        url: "/facturas-tipo-c"
+                    ))
             );
         
         context.Menu.AddItem(
@@ -146,6 +153,13 @@ public class ContableWebMenuContributor : IMenuContributor
                     "Dashboard AFIP",
                     icon: "fa fa-key",
                     url: "/afip-dashboard"
+                ))
+            .AddItem(
+                new ApplicationMenuItem(
+                    "Menu:AfipTokenRecovery",
+                    "Recuperación Tokens AFIP",
+                    icon: "fa fa-sync",
+                    url: "/afip-token-recovery"
                 ))
             .AddItem(
                 new ApplicationMenuItem(

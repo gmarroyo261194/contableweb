@@ -32,6 +32,14 @@
     </Column>
 </Row>
 
+<!-- Gestión de tokens persistentes -->
+<Row Class="mt-4">
+    <Column ColumnSize="ColumnSize.Is12">
+        <AfipTokenManager OnTokenRecuperado="OnTokenRecuperado"
+                         OnError="OnTokenManagerError" />
+    </Column>
+</Row>
+
 <!-- Estados de tokens para diferentes servicios -->
 <Row Class="mt-4">
     <Column ColumnSize="ColumnSize.Is6">
@@ -289,6 +297,18 @@
     private void OnTokenEvent(string message)
     {
         AddLogEntry(message);
+        StateHasChanged();
+    }
+
+    private void OnTokenRecuperado(string message)
+    {
+        AddLogEntry($"🔄 {message}");
+        StateHasChanged();
+    }
+
+    private void OnTokenManagerError(string error)
+    {
+        AddLogEntry($"❌ Error en gestión de tokens: {error}");
         StateHasChanged();
     }
 

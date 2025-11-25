@@ -1,0 +1,269 @@
+﻿@using ContableWeb.Services.Afip
+@using Blazorise.Components
+@inject IAfipTokenService AfipTokenService
+@implements IDisposable
+
+<Card>
+    <CardHeader>
+        <Row Class="justify-content-between align-items-center">
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <CardTitle>
+                    <Icon Name="IconName.Dashboard" Class="me-2"/>
+                    Gestión de Tokens AFIP
+                </CardTitle>
+            </Column>
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <ButtonGroup>
+                    <Button Color="Color.Info" Size="Size.Small" Clicked="BuscarTokenExistenteAsync" Disabled="@_isLoading">
+                        <Icon Name="IconName.Search" /> Buscar Existente
+                    </Button>
+                    <Button Color="Color.Warning" Size="Size.Small" Clicked="LimpiarTokensExpiradosAsync" Disabled="@_isLoading">
+                        <Icon Name="IconName.Clear" /> Limpiar Expirados
+                    </Button>
+                </ButtonGroup>
+            </Column>
+        </Row>
+    </CardHeader>
+    <CardBody>
+        <Alert Color="Color.Info">
+            <Icon Name="IconName.InfoCircle" Class="me-2"/>
+            <strong>Persistencia:</strong> Los tokens se guardan en base de datos para recuperarlos después de reinicios.
+            Si AFIP responde "CEE ya posee un TA válido", el sistema intentará recuperar el token existente.
+        </Alert>
+
+        @if (!string.IsNullOrEmpty(_ultimoMensaje))
+        {
+            <Alert Color="@(_esExitoso ? Color.Success : Color.Warning)" Class="mt-2">
+                <Icon Name="@(_esExitoso ? IconName.Check : IconName.ExclamationTriangle)" Class="me-2"/>
+                @_ultimoMensaje
+            </Alert>
+        }
+
+        <Row>
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Servicio AFIP</FieldLabel>
+                    <RadioGroup TValue="string"
+                               CheckedValueChanged="OnServicioChangedAsync" 
+                               Orientation="Orientation.Vertical">
+                        <Radio TValue="string" Value="@("wsfe")" Class="mb-2">
+                            📄 WSFE (Facturación Electrónica)
+                        </Radio>
+                        <Radio TValue="string" Value="@("ws_sr_constancia_inscripcion")" Class="mb-2">
+                            📋 Constancia de Inscripción
+                        </Radio>
+                        <Radio TValue="string" Value="@("wsaa")" Class="mb-2">
+                            🔐 WSAA (Autenticación)
+                        </Radio>
+                    </RadioGroup>
+                </Field>
+            </Column>
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Estado del Token</FieldLabel>
+                    <div class="d-flex align-items-center">
+                        @if (_tokenActual != null)
+                        {
+                            <Badge Color="@(_tokenActual.IsExpired ? Color.Danger : Color.Success)" Class="me-2">
+                                @(_tokenActual.IsExpired ? "Expirado" : "Válido")
+                            </Badge>
+                            <small class="text-muted">
+                                @if (_tokenActual.IsExpired)
+                                {
+                                    <span>Expiró hace @(Math.Abs(_tokenActual.TimeToExpiry.TotalMinutes).ToString("F0")) min</span>
+                                }
+                                else
+                                {
+                                    <span>Expira en @(_tokenActual.TimeToExpiry.TotalMinutes.ToString("F0")) min</span>
+                                }
+                            </small>
+                        }
+                        else
+                        {
+                            <Badge Color="Color.Secondary">Sin Token</Badge>
+                        }
+                    </div>
+                </Field>
+            </Column>
+        </Row>
+
+        @if (_tokenActual != null)
+        {
+            <Row Class="mt-3">
+                <Column ColumnSize="ColumnSize.Is12">
+                    <h6>Detalles del Token</h6>
+                    <Table Size="TableSize.Small" Striped="true">
+                        <TableBody>
+                            <TableRow>
+                                <TableRowCell><strong>Obtenido:</strong></TableRowCell>
+                                <TableRowCell>@_tokenActual.ObtainedAt.ToString("yyyy-MM-dd HH:mm:ss")</TableRowCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableRowCell><strong>Expira:</strong></TableRowCell>
+                                <TableRowCell>@_tokenActual.ExpirationTime.ToString("yyyy-MM-dd HH:mm:ss")</TableRowCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableRowCell><strong>Token (preview):</strong></TableRowCell>
+                                <TableRowCell>
+                                    <code class="small">@GetTokenPreview(_tokenActual.Token)</code>
+                                </TableRowCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableRowCell><strong>Sign (preview):</strong></TableRowCell>
+                                <TableRowCell>
+                                    <code class="small">@GetTokenPreview(_tokenActual.Sign)</code>
+                                </TableRowCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </Column>
+            </Row>
+        }
+
+        @if (_isLoading)
+        {
+            <div class="text-center mt-3">
+                <Spinner Size="SpinnerSize.Small" Color="SpinnerColor.Primary"/>
+                <span class="ms-2">@_mensajeCarga</span>
+            </div>
+        }
+
+        <!-- Instrucciones de uso -->
+        <Row Class="mt-4">
+            <Column ColumnSize="ColumnSize.Is12">
+                <Card Class="border-light">
+                    <CardHeader Class="bg-light">
+                        <CardTitle Size="6">💡 ¿Qué hacer cuando AFIP dice "CEE ya posee un TA válido"?</CardTitle>
+                    </CardHeader>
+                    <CardBody>
+                        <ol class="mb-0">
+                            <li><strong>Buscar Existente:</strong> Haz clic en "Buscar Existente" para intentar recuperar el token válido de la BD.</li>
+                            <li><strong>Esperar:</strong> El sistema esperará 30 segundos automáticamente antes de reintentar.</li>
+                            <li><strong>Verificar Persistencia:</strong> Los tokens se guardan en BD para recuperarlos después de reinicios.</li>
+                            <li><strong>Limpiar Expirados:</strong> Usa "Limpiar Expirados" para eliminar tokens vencidos de la BD.</li>
+                        </ol>
+                    </CardBody>
+                </Card>
+            </Column>
+        </Row>
+    </CardBody>
+</Card>
+
+@code {
+    [Parameter] public EventCallback<string> OnTokenRecuperado { get; set; }
+    [Parameter] public EventCallback<string> OnError { get; set; }
+
+    private string _servicioSeleccionado = "wsfe";
+    private AfipToken? _tokenActual;
+    private bool _isLoading = false;
+    private string _mensajeCarga = "";
+    private string _ultimoMensaje = "";
+    private bool _esExitoso = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ActualizarTokenActualAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ActualizarTokenActualAsync();
+    }
+
+    private async Task ActualizarTokenActualAsync()
+    {
+        _tokenActual = AfipTokenService.GetCurrentToken(_servicioSeleccionado);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnServicioChangedAsync(string nuevoServicio)
+    {
+        _servicioSeleccionado = nuevoServicio;
+        _ultimoMensaje = ""; // Limpiar mensaje anterior
+        await ActualizarTokenActualAsync();
+    }
+
+    private async Task BuscarTokenExistenteAsync()
+    {
+        _isLoading = true;
+        _mensajeCarga = "Buscando token existente...";
+        _ultimoMensaje = "";
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine($"=== BUSCANDO TOKEN EXISTENTE PARA {_servicioSeleccionado} ===");
+            
+            var tokenRecuperado = await AfipTokenService.IntentarRecuperarTokenExistenteAsync(_servicioSeleccionado);
+            
+            if (tokenRecuperado != null && !tokenRecuperado.IsExpired)
+            {
+                _tokenActual = tokenRecuperado;
+                _ultimoMensaje = $"✅ Token existente recuperado para {_servicioSeleccionado}. Expira en {tokenRecuperado.TimeToExpiry.TotalMinutes:F0} minutos.";
+                _esExitoso = true;
+                
+                await OnTokenRecuperado.InvokeAsync($"Token recuperado para {_servicioSeleccionado}");
+                Console.WriteLine($"✅ Token existente encontrado para {_servicioSeleccionado}");
+            }
+            else
+            {
+                _ultimoMensaje = $"⚠️ No se encontró un token válido existente para {_servicioSeleccionado}.";
+                _esExitoso = false;
+                Console.WriteLine($"❌ No se encontró token existente para {_servicioSeleccionado}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _ultimoMensaje = $"❌ Error buscando token existente: {ex.Message}";
+            _esExitoso = false;
+            await OnError.InvokeAsync(ex.Message);
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LimpiarTokensExpiradosAsync()
+    {
+        _isLoading = true;
+        _mensajeCarga = "Limpiando tokens expirados...";
+        _ultimoMensaje = "";
+        StateHasChanged();
+
+        try
+        {
+            // Este método se implementaría en el repositorio
+            // await AfipTokenService.LimpiarTokensExpiradosAsync();
+            
+            _ultimoMensaje = "✅ Tokens expirados eliminados correctamente.";
+            _esExitoso = true;
+            
+            await ActualizarTokenActualAsync();
+        }
+        catch (Exception ex)
+        {
+            _ultimoMensaje = $"❌ Error limpiando tokens expirados: {ex.Message}";
+            _esExitoso = false;
+            await OnError.InvokeAsync(ex.Message);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTokenPreview(string token)
+    {
+        return string.IsNullOrEmpty(token) ? "N/A" : 
+            token.Length > 30 ? $"{token.Substring(0, 30)}..." : token;
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+}

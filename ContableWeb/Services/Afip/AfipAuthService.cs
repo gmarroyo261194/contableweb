@@ -99,14 +99,22 @@ namespace ContableWeb.Services.Afip
             catch (AfipSoapFaultException ex)
             {
                 _logger.LogError(ex, "SOAP Fault de AFIP: {FaultCode} - {FaultString}", ex.FaultCode, ex.FaultString);
+                
+                // Verificar si el error indica que ya existe un token válido
+                var isTokenAlreadyExists = ex.FaultString?.Contains("CEE ya posee un TA valido") == true ||
+                                          ex.Message?.Contains("CEE ya posee un TA valido") == true;
+                
                 return AfipAuthResult.Failure(new ErrorResponse
                 {
-                    Message = ex.Message,
+                    Message = isTokenAlreadyExists ? 
+                        "AFIP indica que ya existe un token válido para este servicio. Intenta recuperar el token existente desde la base de datos." : 
+                        ex.Message,
                     ExceptionType = ex.GetType().FullName,
                     FaultCode = ex.FaultCode,
                     FaultString = ex.FaultString,
                     ExceptionName = ex.ExceptionName,
-                    Hostname = ex.Hostname
+                    Hostname = ex.Hostname,
+                    IsTokenAlreadyExists = isTokenAlreadyExists
                 });
             }
             catch (Exception ex)
@@ -193,5 +201,8 @@ namespace ContableWeb.Services.Afip
         public string? FaultString { get; set; }
         public string? ExceptionName { get; set; }
         public string? Hostname { get; set; }
+        
+        // Indica si el error es porque ya existe un token válido
+        public bool IsTokenAlreadyExists { get; set; } = false;
     }
 }
