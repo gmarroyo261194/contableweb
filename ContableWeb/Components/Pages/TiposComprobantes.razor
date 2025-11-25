@@ -1,32 +1,49 @@
 ﻿@page "/tipo-comprobantes"
-@using ContableWeb.Localization
-@using ContableWeb.Permissions
-@using ContableWeb.Services.TiposComprobantes
-@using ContableWeb.Services.Dtos.TiposComprobantes
+@using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.Application.Dtos
 @using Volo.Abp.AspNetCore.Components.Web
+@using Volo.Abp.BlazoriseUI
+@using Blazorise
+@using Blazorise.DataGrid
+@using ContableWeb.Permissions
+@using ContableWeb.Localization
+@using ContableWeb.Services.Afip
+@using ContableWeb.Services.TiposComprobantes
+@using ContableWeb.Services.Dtos.TiposComprobantes
 @attribute [Authorize(ContableWebPermissions.TiposComprobantes.Default)]
 @inherits AbpCrudPageBase<ITipoComprobanteAppService, TipoComprobanteDto, int, PagedAndSortedResultRequestDto, CreateUpdateTipoComprobanteDto>
-@inject IStringLocalizer<ContableWebResource> L
-@inject AbpBlazorMessageLocalizerHelper<ContableWebResource> LH
+@inject IStringLocalizer<ContableWebResource> Localizer
+@inject AbpBlazorMessageLocalizerHelper<ContableWebResource> Lh
+@inject IAfipAuthService AfipAuthService
+@inject IAfipTokenService AfipTokenService
 
 <Card>
     <CardHeader>
         <Row Class="justify-content-between">
             <Column ColumnSize="ColumnSize.IsAuto">
-                <CardTitle>@L["TiposComprobantes"]</CardTitle>
+                <CardTitle>@Localizer["TiposComprobantes"]</CardTitle>
             </Column>
             <Column ColumnSize="ColumnSize.IsAuto">
-
                 @if (HasCreatePermission)
                 {
                     <Button Color="Color.Primary"
                             Clicked="OpenCreateModalAsync">
                         <Icon Name="IconName.Add"/>
-                        @L["NewTipoComprobante"]
+                        @Localizer["NewTipoComprobante"]
                     </Button>
                 }
+            </Column>
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <!-- Botón para obtener token AFIP y mostrar respuesta -->
+                <Button Color="Color.Info" Clicked="GetAfipTokenAsync">
+                    <Icon Name="IconName.Sync" /> Obtener Token AFIP
+                </Button>
+                <!-- Botón de prueba: mostrar ejemplo de SOAP Fault -->
+                <Button Color="Color.Warning" Class="ml-2" Clicked="ShowSampleAfipErrorAsync">
+                    <Icon Name="IconName.ExclamationCircle" /> Mostrar Ejemplo Error AFIP
+                </Button>
             </Column>
         </Row>
     </CardHeader>
@@ -43,11 +60,11 @@
                     <DisplayTemplate>
                         <EntityActions TItem="TipoComprobanteDto" EntityActionsColumn="@EntityActionsColumn">
                             <EntityAction TItem="TipoComprobanteDto"
-                                          Text="@L["Edit"]"
+                                          Text="@Localizer["Edit"]"
                                           Visible="HasUpdatePermission"
                                           Clicked="() => OpenEditModalAsync(context)"/>
                             <EntityAction TItem="TipoComprobanteDto"
-                                          Text="@L["Delete"]"
+                                          Text="@Localizer["Delete"]"
                                           Visible="HasDeletePermission"
                                           Clicked="() => DeleteEntityAsync(context)"
                                           ConfirmationMessage="()=>GetDeleteConfirmationMessage(context)"/>
@@ -56,34 +73,50 @@
                 </DataGridEntityActionsColumn>
                 <DataGridColumn TItem="TipoComprobanteDto"
                                 Field="@nameof(TipoComprobanteDto.Nombre)"
-                                Caption="@L["Nombre"]"></DataGridColumn>
+                                Caption="@Localizer["Nombre"]"></DataGridColumn>
                 <DataGridColumn TItem="TipoComprobanteDto"
                                 Field="@nameof(TipoComprobanteDto.Descripcion)"
-                                Caption="@L["Descripcion"]"></DataGridColumn>
+                                Caption="@Localizer["Descripcion"]"></DataGridColumn>
                 <DataGridColumn TItem="TipoComprobanteDto"
                                 Field="@nameof(TipoComprobanteDto.Abreviatura)"
-                                Caption="@L["Codigo"]"></DataGridColumn>
+                                Caption="@Localizer["Codigo"]"></DataGridColumn>
                 <DataGridColumn TItem="TipoComprobanteDto"
                                 Field="@nameof(TipoComprobanteDto.EsFiscal)"
-                                Caption="@L["EsFiscal"]"></DataGridColumn>
+                                Caption="@Localizer["EsFiscal"]">
+                    <DisplayTemplate Context="context">
+                        <Switch TValue="bool" @bind-Checked="@context.Enabled" ReadOnly="true"/>
+                    </DisplayTemplate>
+                </DataGridColumn>
                 <DataGridColumn TItem="TipoComprobanteDto"
                                 Field="@nameof(TipoComprobanteDto.Enabled)"
-                                Caption="@L["Activo"]"></DataGridColumn>
+                                Caption="@Localizer["Activo"]">
+                    <DisplayTemplate Context="context">
+                        <Switch TValue="bool" @bind-Checked="@context.Enabled" ReadOnly="true"/>
+                    </DisplayTemplate>
+                </DataGridColumn>
             </DataGridColumns>
         </DataGrid>
     </CardBody>
 </Card>
 
+<!-- Componente para mostrar el estado del token AFIP -->
+<div class="mt-4">
+    <AfipTokenStatus ServiceId="wsfe" 
+                     ShowTokenDetails="true"
+                     OnTokenObtained="OnAfipTokenObtained"
+                     OnTokenError="OnAfipTokenError" />
+</div>
+
 <Modal @ref="@CreateModal">
     <ModalContent IsCentered="true">
         <Form>
             <ModalHeader>
-                <ModalTitle>@L["NewTipoComprobante"]</ModalTitle>
+                <ModalTitle>@Localizer["NewTipoComprobante"]</ModalTitle>
                 <CloseButton Clicked="CloseCreateModalAsync"/>
             </ModalHeader>
             <ModalBody>
                 <Validations @ref="@CreateValidationsRef" Model="@NewEntity" ValidateOnLoad="false">
-                    <Validation MessageLocalizer="@LH.Localize">
+                    <Validation MessageLocalizer="@Lh.Localize">
                         <Field>
                             <FieldLabel>Nombre</FieldLabel>
                             <TextEdit @bind-Text="@NewEntity.Nombre">
@@ -120,16 +153,91 @@
                 </Validations>
                 <ModalFooter>
                     <Button Color="Color.Secondary"
-                            Clicked="CloseCreateModalAsync">@L["Cancel"]</Button>
+                            Clicked="CloseCreateModalAsync">@Localizer["Cancel"]</Button>
                     <Button Color="Color.Primary"
                             Type="@ButtonType.Submit"
                             PreventDefaultOnSubmit="true"
-                            Clicked="CreateEntityAsync">@L["Save"]</Button>
+                            Clicked="CreateEntityAsync">@Localizer["Save"]</Button>
                 </ModalFooter>
             </ModalBody>
         </Form>
     </ModalContent>
 </Modal>
+
+<!-- Modal para mostrar la respuesta AFIP (éxito o error) -->
+<Modal @ref="_afipModal">
+    <ModalContent IsCentered="true">
+        <Card>
+            <ModalHeader>
+                <ModalTitle>Respuesta AFIP</ModalTitle>
+                <CloseButton Clicked="CloseAfipModalAsync" />
+            </ModalHeader>
+            <CardBody>
+                @if (_wsaaResponse != null)
+                {
+                    <Field>
+                        <FieldLabel>Token</FieldLabel>
+                        <TextEdit Text="@_wsaaResponse.Token" ReadOnly="true" />
+                    </Field>
+                    <Field>
+                        <FieldLabel>Sign</FieldLabel>
+                        <TextEdit Text="@_wsaaResponse.Sign" ReadOnly="true" />
+                    </Field>
+                    <Field>
+                        <FieldLabel>Expiración</FieldLabel>
+                        <TextEdit Text="@(_wsaaResponse.ExpirationTime.ToString("u"))" ReadOnly="true" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>Respuesta (JSON formateado)</FieldLabel>
+                        <div class="afip-json">@JsonSerializer.Serialize(_wsaaResponse, new JsonSerializerOptions { WriteIndented = true })</div>
+                    </Field>
+                }
+                else if (_afipSoapFault != null)
+                {
+                    <Field>
+                        <FieldLabel>SOAP Fault (JSON)</FieldLabel>
+                        <div class="afip-json">@JsonSerializer.Serialize(new { _afipSoapFault.FaultCode, _afipSoapFault.FaultString, _afipSoapFault.ExceptionName, _afipSoapFault.Hostname }, new JsonSerializerOptions { WriteIndented = true })</div>
+                    </Field>
+                }
+                else if (_afipWsaaEx != null)
+                {
+                    <Field>
+                        <FieldLabel>Error (JSON)</FieldLabel>
+                        <div class="afip-json">@JsonSerializer.Serialize(new { ErrorMessage = _afipWsaaEx.Message }, new JsonSerializerOptions { WriteIndented = true })</div>
+                    </Field>
+                }
+                else if (_afipException != null)
+                {
+                    <Field>
+                        <FieldLabel>Error inesperado (ToString)</FieldLabel>
+                        <div class="afip-json">@_afipException.ToString()</div>
+                    </Field>
+                }
+                else
+                {
+                    <div>No hay datos para mostrar.</div>
+                }
+            </CardBody>
+            <CardFooter>
+                <Button Color="Color.Secondary" Clicked="CloseAfipModalAsync">Cerrar</Button>
+            </CardFooter>
+        </Card>
+    </ModalContent>
+</Modal>
+
+<style>
+    .afip-json {
+        white-space: pre-wrap;
+        background: #f8f9fa;
+        padding: .5rem;
+        border-radius: .25rem;
+        font-family: "Courier New", monospace;
+        max-height: 400px;
+        overflow: auto;
+        border: 1px solid #e1e1e1;
+    }
+</style>
 
 @code {
 
@@ -138,5 +246,127 @@
         CreatePolicyName = ContableWebPermissions.TiposComprobantes.Create;
         UpdatePolicyName = ContableWebPermissions.TiposComprobantes.Edit;
         DeletePolicyName = ContableWebPermissions.TiposComprobantes.Delete;
+    }
+    
+    // Variables para el modal AFIP
+    private Modal? _afipModal;
+    private WsaaResponse? _wsaaResponse;
+    private AfipSoapFaultException? _afipSoapFault;
+    private AfipWsaaException? _afipWsaaEx;
+    private Exception? _afipException;
+
+    private async Task GetAfipTokenAsync()
+    {
+        Console.WriteLine("=====================================");
+        Console.WriteLine("USANDO SERVICIO GLOBAL DE TOKEN AFIP");
+        Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        Console.WriteLine("=====================================");
+
+        // Limpiar estados previos
+        _wsaaResponse = null;
+        _afipSoapFault = null;
+        _afipWsaaEx = null;
+        _afipException = null;
+
+        try
+        {
+            // Usar el servicio global de token (se regenera automáticamente si es necesario)
+            var token = await AfipTokenService.GetValidTokenAsync("wsfe");
+            
+            Console.WriteLine("✅ TOKEN OBTENIDO DEL SERVICIO GLOBAL");
+            Console.WriteLine($"Token obtenido (primeros 50 chars): {token.Token.Substring(0, Math.Min(50, token.Token.Length))}...");
+            Console.WriteLine($"Expira: {token.ExpirationTime}");
+            Console.WriteLine($"Tiempo restante: {token.TimeToExpiry.TotalMinutes:F1} minutos");
+
+            // Convertir a WsaaResponse para mostrar en el modal
+            _wsaaResponse = new WsaaResponse
+            {
+                Token = token.Token,
+                Sign = token.Sign,
+                ExpirationTime = token.ExpirationTime,
+                RawXml = token.RawXml
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ ERROR OBTENIENDO TOKEN DEL SERVICIO GLOBAL");
+            Console.WriteLine($"Tipo: {ex.GetType().Name}");
+            Console.WriteLine($"Mensaje: {ex.Message}");
+            _afipException = ex;
+        }
+
+        Console.WriteLine("=====================================");
+        Console.WriteLine("FIN PROCESO CON SERVICIO GLOBAL");
+        Console.WriteLine("=====================================");
+
+        // Mostrar modal con la respuesta o el error
+        if (_afipModal != null)
+        {
+            await _afipModal.Show();
+        }
+    }
+
+    private void OnAfipTokenObtained(AfipToken token)
+    {
+        Console.WriteLine($"🎉 Token AFIP obtenido para {token.ServiceId}");
+        Console.WriteLine($"   Expira: {token.ExpirationTime}");
+        Console.WriteLine($"   Tiempo restante: {token.TimeToExpiry.TotalMinutes:F1} minutos");
+        StateHasChanged();
+    }
+
+    private void OnAfipTokenError(string error)
+    {
+        Console.WriteLine($"❌ Error en token AFIP: {error}");
+        // Aquí podrías mostrar una notificación toast o alert
+        StateHasChanged();
+    }
+
+    private async Task ShowSampleAfipErrorAsync()
+    {
+        // JSON de ejemplo enviado por el usuario
+        var json = @"{
+  ""FaultCode"": ""ns1:xml.bad"",
+  ""FaultString"": ""No se ha podido interpretar el XML contra el SCHEMA"",
+  ""ExceptionName"": ""gov.afip.desein.dvadac.sua.view.wsaa.LoginFault"",
+  ""Hostname"": ""wsaaext1.homo.afip.gov.ar""
+}";
+        try
+        {
+            var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var faultCode = root.GetProperty("FaultCode").GetString() ?? string.Empty;
+            var faultString = root.GetProperty("FaultString").GetString() ?? string.Empty;
+            var exceptionName = root.TryGetProperty("ExceptionName", out var en) ? en.GetString() : null;
+            var hostname = root.TryGetProperty("Hostname", out var hn) ? hn.GetString() : null;
+
+            _wsaaResponse = null;
+            _afipWsaaEx = null;
+            _afipException = null;
+            _afipSoapFault = new AfipSoapFaultException(faultCode, faultString, exceptionName, hostname);
+
+            if (_afipModal != null)
+            {
+                await _afipModal.Show();
+            }
+        }
+        catch (Exception ex)
+        {
+            // En caso de error al parsear, mostrar excepción simple
+            _wsaaResponse = null;
+            _afipSoapFault = null;
+            _afipWsaaEx = new AfipWsaaException(ex.Message);
+            if (_afipModal != null)
+            {
+                await _afipModal.Show();
+            }
+        }
+    }
+
+    private async Task CloseAfipModalAsync()
+    {
+        if (_afipModal != null)
+        {
+            await _afipModal.Hide();
+        }
     }
 }

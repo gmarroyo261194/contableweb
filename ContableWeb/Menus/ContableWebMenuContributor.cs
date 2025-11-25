@@ -139,9 +139,22 @@ public class ContableWebMenuContributor : IMenuContributor
             new ApplicationMenuItem(
                 "Menu:Configuracion",
                 l["Menu:Configuracion"],
-                icon: "fa fa-cogs",
-                url: "/config"
-            ));
+                icon: "fa fa-cogs"
+            ).AddItem(
+                new ApplicationMenuItem(
+                    "Menu:AfipDashboard",
+                    "Dashboard AFIP",
+                    icon: "fa fa-key",
+                    url: "/afip-dashboard"
+                ))
+            .AddItem(
+                new ApplicationMenuItem(
+                    "Menu:Config",
+                    l["Menu:Configuracion"],
+                    icon: "fa fa-cogs",
+                    url: "/config"
+                ))
+            );
 
         return Task.CompletedTask;
     }

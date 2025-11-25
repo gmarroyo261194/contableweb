@@ -61,10 +61,9 @@
                                 Field="@nameof(ServicioDto.RubroNombre)"
                                 Caption="@L["Rubro Asociado"]"></DataGridColumn>
                 <DataGridColumn TItem="ServicioDto"
-                                Field="@nameof(ServicioDto.Enabled)"
                                 Caption="@L["Habilitado"]">
-                    <DisplayTemplate Context="servicio">
-                        <Switch TValue="bool" TItem="ServicioDto" bind-Checked="@servicio.Enabled"></Switch>
+                    <DisplayTemplate Context="context">
+                        <Switch TValue="bool"  @bind-Checked="@context.Enabled" ReadOnly="true" />
                     </DisplayTemplate>
                 </DataGridColumn>
             </DataGridColumns>

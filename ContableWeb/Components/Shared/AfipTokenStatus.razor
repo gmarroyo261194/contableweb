@@ -1,0 +1,292 @@
+﻿@using ContableWeb.Services.Afip
+@inject IAfipTokenService AfipTokenService
+@implements IDisposable
+
+<Card>
+    <CardHeader>
+        <Row Class="justify-content-between align-items-center">
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <CardTitle>
+                    <Icon Name="IconName.Key" Class="me-2"/>
+                    Token AFIP - @ServiceId
+                </CardTitle>
+            </Column>
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <Badge Color="@GetStatusColor()" Class="me-2">@GetStatusText()</Badge>
+                <ButtonGroup>
+                    <Button Color="Color.Info" Size="Size.Small" Clicked="RefreshStatusAsync">
+                        <Icon Name="IconName.Sync" /> Actualizar
+                    </Button>
+                    <Button Color="Color.Warning" Size="Size.Small" Clicked="ForceRefreshTokenAsync">
+                        <Icon Name="IconName.Redo" /> Regenerar
+                    </Button>
+                </ButtonGroup>
+            </Column>
+        </Row>
+    </CardHeader>
+    <CardBody>
+        @if (_currentToken != null)
+        {
+            <Row>
+                <Column ColumnSize="ColumnSize.Is6">
+                    <Field>
+                        <FieldLabel>Estado</FieldLabel>
+                        <div class="d-flex align-items-center">
+                            <Icon Name="@(_currentToken.IsExpired ? IconName.Times : IconName.Check)" 
+                                  Color="@(_currentToken.IsExpired ? Color.Danger : Color.Success)" Class="me-2"/>
+                            <span class="@(_currentToken.IsExpired ? "text-danger" : "text-success")">
+                                @(_currentToken.IsExpired ? "Expirado" : "Válido")
+                            </span>
+                        </div>
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is6">
+                    <Field>
+                        <FieldLabel>Tiempo restante</FieldLabel>
+                        <div class="@GetTimeRemainingClass()">
+                            @GetTimeRemainingText()
+                        </div>
+                    </Field>
+                </Column>
+            </Row>
+            
+            <Row>
+                <Column ColumnSize="ColumnSize.Is6">
+                    <Field>
+                        <FieldLabel>Obtenido</FieldLabel>
+                        <TextEdit Text="@_currentToken.ObtainedAt.ToString("yyyy-MM-dd HH:mm:ss")" ReadOnly="true"/>
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is6">
+                    <Field>
+                        <FieldLabel>Expira</FieldLabel>
+                        <TextEdit Text="@_currentToken.ExpirationTime.ToString("yyyy-MM-dd HH:mm:ss")" ReadOnly="true"/>
+                    </Field>
+                </Column>
+            </Row>
+            
+            @if (ShowTokenDetails)
+            {
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is12">
+                        <Field>
+                            <FieldLabel>Token (primeros 50 caracteres)</FieldLabel>
+                            <TextEdit Text="@GetTokenPreview(_currentToken.Token)" ReadOnly="true"/>
+                        </Field>
+                    </Column>
+                </Row>
+                
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is12">
+                        <Field>
+                            <FieldLabel>Sign (primeros 50 caracteres)</FieldLabel>
+                            <TextEdit Text="@GetTokenPreview(_currentToken.Sign)" ReadOnly="true"/>
+                        </Field>
+                    </Column>
+                </Row>
+            }
+            
+            <Row>
+                <Column ColumnSize="ColumnSize.Is12">
+                    <div class="d-flex justify-content-between">
+                        <Button Color="Color.Secondary" Size="Size.Small" Clicked="ToggleTokenDetails">
+                            <Icon Name="@(ShowTokenDetails ? IconName.EyeSlash : IconName.Eye)"/>
+                            @(ShowTokenDetails ? "Ocultar" : "Mostrar") detalles
+                        </Button>
+                        <Button Color="Color.Primary" Size="Size.Small" Clicked="CopyTokenAsync">
+                            <Icon Name="IconName.Copy"/> Copiar Token
+                        </Button>
+                    </div>
+                </Column>
+            </Row>
+        }
+        else
+        {
+            <Alert Color="Color.Warning">
+                <Icon Name="IconName.ExclamationTriangle" Class="me-2"/>
+                No hay token disponible para el servicio <strong>@ServiceId</strong>
+            </Alert>
+            
+            <Button Color="Color.Primary" Clicked="GetTokenAsync">
+                <Icon Name="IconName.Key"/> Obtener Token
+            </Button>
+        }
+        
+        @if (_isLoading)
+        {
+            <div class="text-center mt-3">
+                <Spinner Size="SpinnerSize.Small" Color="SpinnerColor.Primary"/>
+                <span class="ms-2">@_loadingMessage</span>
+            </div>
+        }
+    </CardBody>
+</Card>
+
+@code {
+    [Parameter] public string ServiceId { get; set; } = "wsfe";
+    [Parameter] public bool ShowTokenDetails { get; set; } = false;
+    [Parameter] public EventCallback<AfipToken> OnTokenObtained { get; set; }
+    [Parameter] public EventCallback<string> OnTokenError { get; set; }
+
+    private AfipToken? _currentToken;
+    private bool _isLoading = false;
+    private string _loadingMessage = "";
+    private Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Suscribirse a eventos del servicio
+        AfipTokenService.TokenObtained += OnTokenObtainedHandler;
+        AfipTokenService.TokenExpired += OnTokenExpiredHandler;
+        AfipTokenService.TokenError += OnTokenErrorHandler;
+
+        // Obtener token actual
+        await RefreshStatusAsync();
+
+        // Timer para actualizar cada 30 segundos
+        _refreshTimer = new Timer(async _ => await InvokeAsync(RefreshStatusAsync), null, 
+            TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task RefreshStatusAsync()
+    {
+        _currentToken = AfipTokenService.GetCurrentToken(ServiceId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GetTokenAsync()
+    {
+        _isLoading = true;
+        _loadingMessage = "Obteniendo token AFIP...";
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            _currentToken = await AfipTokenService.GetValidTokenAsync(ServiceId);
+            await OnTokenObtained.InvokeAsync(_currentToken);
+        }
+        catch (Exception ex)
+        {
+            await OnTokenError.InvokeAsync($"Error obteniendo token: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ForceRefreshTokenAsync()
+    {
+        _isLoading = true;
+        _loadingMessage = "Regenerando token AFIP...";
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            _currentToken = await AfipTokenService.RefreshTokenAsync(ServiceId);
+            await OnTokenObtained.InvokeAsync(_currentToken);
+        }
+        catch (Exception ex)
+        {
+            await OnTokenError.InvokeAsync($"Error regenerando token: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ToggleTokenDetails()
+    {
+        ShowTokenDetails = !ShowTokenDetails;
+        StateHasChanged();
+    }
+
+    private async Task CopyTokenAsync()
+    {
+        if (_currentToken != null)
+        {
+            // En un entorno real, usarías JSInterop para copiar al portapapeles
+            // Por ahora, solo mostramos el token en consola
+            Console.WriteLine($"Token AFIP para {ServiceId}:");
+            Console.WriteLine($"Token: {_currentToken.Token}");
+            Console.WriteLine($"Sign: {_currentToken.Sign}");
+        }
+    }
+
+    private Color GetStatusColor()
+    {
+        if (_currentToken == null) return Color.Secondary;
+        if (_currentToken.IsExpired) return Color.Danger;
+        return _currentToken.TimeToExpiry.TotalMinutes < 5 ? Color.Warning : Color.Success;
+    }
+
+    private string GetStatusText()
+    {
+        if (_currentToken == null) return "Sin Token";
+        if (_currentToken.IsExpired) return "Expirado";
+        return _currentToken.TimeToExpiry.TotalMinutes < 5 ? "Por Expirar" : "Válido";
+    }
+
+    private string GetTimeRemainingClass()
+    {
+        if (_currentToken == null || _currentToken.IsExpired) return "text-danger";
+        return _currentToken.TimeToExpiry.TotalMinutes < 5 ? "text-warning" : "text-success";
+    }
+
+    private string GetTimeRemainingText()
+    {
+        if (_currentToken == null) return "N/A";
+        if (_currentToken.IsExpired) return "Expirado";
+        
+        var timeSpan = _currentToken.TimeToExpiry;
+        if (timeSpan.TotalHours >= 1)
+            return $"{timeSpan.Hours}h {timeSpan.Minutes}m";
+        else
+            return $"{timeSpan.Minutes}m {timeSpan.Seconds}s";
+    }
+
+    private string GetTokenPreview(string token)
+    {
+        return string.IsNullOrEmpty(token) ? "N/A" : 
+            token.Length > 50 ? $"{token.Substring(0, 50)}..." : token;
+    }
+
+    private async void OnTokenObtainedHandler(object? sender, AfipTokenEventArgs e)
+    {
+        if (e.ServiceId == ServiceId)
+        {
+            _currentToken = e.Token;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async void OnTokenExpiredHandler(object? sender, AfipTokenEventArgs e)
+    {
+        if (e.ServiceId == ServiceId)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async void OnTokenErrorHandler(object? sender, AfipTokenErrorEventArgs e)
+    {
+        if (e.ServiceId == ServiceId)
+        {
+            await OnTokenError.InvokeAsync(e.ErrorMessage);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        // Desuscribirse de eventos
+        AfipTokenService.TokenObtained -= OnTokenObtainedHandler;
+        AfipTokenService.TokenExpired -= OnTokenExpiredHandler;
+        AfipTokenService.TokenError -= OnTokenErrorHandler;
+        
+        _refreshTimer?.Dispose();
+    }
+}

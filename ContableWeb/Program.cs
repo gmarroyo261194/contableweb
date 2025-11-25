@@ -1,5 +1,6 @@
 using System;
 using ContableWeb.Data;
+using ContableWeb.Services.Afip;
 using Serilog;
 using Serilog.Events;
 using Volo.Abp.Data;
@@ -50,6 +51,15 @@ public class Program
                 builder.Services.AddDataMigrationEnvironment();
             }
             await builder.AddApplicationAsync<ContableWebModule>();
+            
+            builder.Services.Configure<AfipConfiguration>(
+                builder.Configuration.GetSection("Afip"));
+            
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSingleton<IAfipAuthService, AfipAuthService>();
+            
+            builder.Services.AddHttpClient();
+            
             var app = builder.Build();
             await app.InitializeApplicationAsync();
 

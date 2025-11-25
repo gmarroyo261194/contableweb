@@ -219,6 +219,7 @@ public class ContableWebModule : AbpModule
         ConfigureRouter(context);
         ConfigureMultiTenancy();
         ConfigureMenu(context);
+        ConfigureAfipServices(context);
         ConfigureUrls(configuration);
         ConfigureHealthChecks(context);
         ConfigureAutoMapper(context);
@@ -308,6 +309,21 @@ public class ContableWebModule : AbpModule
         {
             options.MenuContributors.Add(new ContableWebMenuContributor());
         });
+    }
+
+    private void ConfigureAfipServices(ServiceConfigurationContext context)
+    {
+        var configuration = context.Services.GetConfiguration();
+        
+        // Configurar servicios AFIP
+        context.Services.Configure<ContableWeb.Services.Afip.AfipConfiguration>(configuration.GetSection("Afip"));
+        
+        // Registrar servicios AFIP
+        context.Services.AddScoped<ContableWeb.Services.Afip.PowerShellAfipService>();
+        context.Services.AddScoped<ContableWeb.Services.Afip.IAfipAuthService, ContableWeb.Services.Afip.AfipAuthService>();
+        
+        // Registrar servicio de token global como Singleton para que esté disponible en toda la aplicación
+        context.Services.AddSingleton<ContableWeb.Services.Afip.IAfipTokenService, ContableWeb.Services.Afip.AfipTokenService>();
     }
 
     private void ConfigureUrls(IConfiguration configuration)

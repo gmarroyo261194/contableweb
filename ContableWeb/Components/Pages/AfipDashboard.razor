@@ -1,0 +1,343 @@
+﻿@page "/afip-dashboard"
+@using ContableWeb.Services.Afip
+@using ContableWeb.Components.Shared
+@using System.Text.Json
+@inject IAfipTokenService AfipTokenService
+@inject IStringLocalizer<ContableWebResource> L
+
+<PageTitle>Dashboard AFIP</PageTitle>
+
+<Row>
+    <Column ColumnSize="ColumnSize.Is12">
+        <Card>
+            <CardHeader>
+                <CardTitle>
+                    <Icon Name="IconName.Dashboard" Class="me-2"/>
+                    Dashboard AFIP - Estado de Tokens
+                </CardTitle>
+            </CardHeader>
+            <CardBody>
+                <p class="text-muted">
+                    Esta página demuestra cómo acceder a los tokens AFIP desde cualquier componente de la aplicación.
+                    Los tokens se gestionan automáticamente y se regeneran cuando expiran.
+                </p>
+                
+                <Alert Color="Color.Info">
+                    <Icon Name="IconName.InfoCircle" Class="me-2"/>
+                    <strong>Servicio Global:</strong> El <code>IAfipTokenService</code> está registrado como Singleton y 
+                    mantiene los tokens válidos automáticamente. Puedes inyectarlo en cualquier componente o servicio.
+                </Alert>
+            </CardBody>
+        </Card>
+    </Column>
+</Row>
+
+<!-- Estados de tokens para diferentes servicios -->
+<Row Class="mt-4">
+    <Column ColumnSize="ColumnSize.Is6">
+        <AfipTokenStatus ServiceId="wsfe" 
+                         ShowTokenDetails="false"
+                         OnTokenObtained="@((token) => OnTokenEvent($"Token obtenido para {token.ServiceId}"))"
+                         OnTokenError="@((error) => OnTokenEvent($"Error: {error}"))" />
+    </Column>
+    <Column ColumnSize="ColumnSize.Is6">
+        <AfipTokenStatus ServiceId="ws_sr_constancia_inscripcion" 
+                         ShowTokenDetails="false"
+                         OnTokenObtained="@((token) => OnTokenEvent($"Token obtenido para {token.ServiceId}"))"
+                         OnTokenError="@((error) => OnTokenEvent($"Error: {error}"))" />
+    </Column>
+</Row>
+
+<!-- Ejemplos de uso programático -->
+<Row Class="mt-4">
+    <Column ColumnSize="ColumnSize.Is12">
+        <Card>
+            <CardHeader>
+                <CardTitle>Ejemplos de Uso Programático</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Button Color="Color.Primary" Clicked="GetTokenExample" Class="mb-2 w-100">
+                            <Icon Name="IconName.Code"/> Ejemplo: Obtener Token Válido
+                        </Button>
+                        <Button Color="Color.Secondary" Clicked="CheckTokenStatusExample" Class="mb-2 w-100">
+                            <Icon Name="IconName.Search"/> Ejemplo: Verificar Estado
+                        </Button>
+                        <Button Color="Color.Info" Clicked="GetAllTokensStatusExample" Class="mb-2 w-100">
+                            <Icon Name="IconName.List"/> Ejemplo: Estado de Todos los Tokens
+                        </Button>
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Resultado de Ejemplo</CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <pre class="example-output">@_exampleOutput</pre>
+                            </CardBody>
+                        </Card>
+                    </Column>
+                </Row>
+            </CardBody>
+        </Card>
+    </Column>
+</Row>
+
+<!-- Log de eventos -->
+<Row Class="mt-4">
+    <Column ColumnSize="ColumnSize.Is12">
+        <Card>
+            <CardHeader>
+                <Row Class="justify-content-between align-items-center">
+                    <Column ColumnSize="ColumnSize.IsAuto">
+                        <CardTitle>Log de Eventos</CardTitle>
+                    </Column>
+                    <Column ColumnSize="ColumnSize.IsAuto">
+                        <Button Color="Color.Secondary" Size="Size.Small" Clicked="ClearLog">
+                            <Icon Name="IconName.Delete"/> Limpiar
+                        </Button>
+                    </Column>
+                </Row>
+            </CardHeader>
+            <CardBody>
+                @if (_eventLog.Any())
+                {
+                    <div class="event-log">
+                        @foreach (var logEntry in _eventLog.Take(10).Reverse())
+                        {
+                            <div class="event-entry">
+                                <small class="text-muted">@logEntry.Timestamp.ToString("HH:mm:ss")</small>
+                                <span class="ms-2">@logEntry.Message</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No hay eventos registrados.</p>
+                }
+            </CardBody>
+        </Card>
+    </Column>
+</Row>
+
+<style>
+    .example-output {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 0.375rem;
+        padding: 0.75rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+
+    .event-log {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .event-entry {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .event-entry:last-child {
+        border-bottom: none;
+    }
+</style>
+
+@code {
+    private string _exampleOutput = "Haz clic en un botón para ver el resultado...";
+    private List<LogEntry> _eventLog = new();
+
+    protected override void OnInitialized()
+    {
+        // Suscribirse a eventos del servicio para logging
+        AfipTokenService.TokenObtained += OnTokenObtainedGlobal;
+        AfipTokenService.TokenExpired += OnTokenExpiredGlobal;
+        AfipTokenService.TokenError += OnTokenErrorGlobal;
+
+        AddLogEntry("Dashboard AFIP inicializado");
+    }
+
+    private async Task GetTokenExample()
+    {
+        try
+        {
+            AddLogEntry("Ejecutando ejemplo: Obtener token válido...");
+            
+            var token = await AfipTokenService.GetValidTokenAsync("wsfe");
+            
+            var result = "✅ Token obtenido exitosamente:\n" +
+                        $"Servicio: {token.ServiceId}\n" +
+                        $"Token Length: {token.Token.Length} caracteres\n" +
+                        $"Sign Length: {token.Sign.Length} caracteres\n" +
+                        $"Obtenido: {token.ObtainedAt:yyyy-MM-dd HH:mm:ss}\n" +
+                        $"Expira: {token.ExpirationTime:yyyy-MM-dd HH:mm:ss}\n" +
+                        $"Estado: {(token.IsExpired ? "Expirado" : "Válido")}\n" +
+                        $"Tiempo restante: {token.TimeToExpiry.TotalMinutes:F1} minutos";
+
+            _exampleOutput = result;
+            AddLogEntry($"Token obtenido para {token.ServiceId}");
+        }
+        catch (Exception ex)
+        {
+            _exampleOutput = $"❌ Error: {ex.Message}";
+            AddLogEntry($"Error obteniendo token: {ex.Message}");
+        }
+
+        StateHasChanged();
+    }
+
+    private void CheckTokenStatusExample()
+    {
+        try
+        {
+            AddLogEntry("Ejecutando ejemplo: Verificar estado de token...");
+            
+            var hasValidToken = AfipTokenService.HasValidToken("wsfe");
+            var currentToken = AfipTokenService.GetCurrentToken("wsfe");
+
+            var result = $"Estado del token para 'wsfe':\n" +
+                        $"Tiene token válido: {(hasValidToken ? "✅ Sí" : "❌ No")}";
+
+            if (currentToken != null)
+            {
+                result += "\nToken actual:\n" +
+                         $"  - Obtenido: {currentToken.ObtainedAt:yyyy-MM-dd HH:mm:ss}\n" +
+                         $"  - Expira: {currentToken.ExpirationTime:yyyy-MM-dd HH:mm:ss}\n" +
+                         $"  - Estado: {(currentToken.IsExpired ? "Expirado" : "Válido")}\n" +
+                         $"  - Tiempo restante: {currentToken.TimeToExpiry.TotalMinutes:F1} minutos";
+            }
+            else
+            {
+                result += "\nNo hay token disponible.";
+            }
+
+            _exampleOutput = result;
+            AddLogEntry("Estado verificado");
+        }
+        catch (Exception ex)
+        {
+            _exampleOutput = $"❌ Error: {ex.Message}";
+            AddLogEntry($"Error verificando estado: {ex.Message}");
+        }
+
+        StateHasChanged();
+    }
+
+    private void GetAllTokensStatusExample()
+    {
+        try
+        {
+            AddLogEntry("Ejecutando ejemplo: Estado de todos los tokens...");
+            
+            // Obtener estado de todos los tokens (método que agregaremos al servicio)
+            var allStatus = GetAllTokensStatusFromService();
+
+            if (allStatus.Any())
+            {
+                var result = "Estado de todos los tokens:\n\n";
+                
+                foreach (var kvp in allStatus)
+                {
+                    result += $"Servicio: {kvp.Key}\n";
+                    result += $"  Estado: {(kvp.Value.IsExpired ? "Expirado" : "Válido")}\n";
+                    result += $"  Expira: {kvp.Value.ExpirationTime:yyyy-MM-dd HH:mm:ss}\n";
+                    result += $"  Tiempo restante: {kvp.Value.TimeToExpiry.TotalMinutes:F1} min\n\n";
+                }
+                
+                _exampleOutput = result;
+            }
+            else
+            {
+                _exampleOutput = "No hay tokens disponibles.";
+            }
+            
+            AddLogEntry($"Estado obtenido para {allStatus.Count} tokens");
+        }
+        catch (Exception ex)
+        {
+            _exampleOutput = $"❌ Error: {ex.Message}";
+            AddLogEntry($"Error obteniendo estados: {ex.Message}");
+        }
+
+        StateHasChanged();
+    }
+
+    private Dictionary<string, AfipToken> GetAllTokensStatusFromService()
+    {
+        // Por ahora simulamos algunos tokens - en una implementación real,
+        // agregarías un método público al AfipTokenService para esto
+        var result = new Dictionary<string, AfipToken>();
+        
+        var wsfeToken = AfipTokenService.GetCurrentToken("wsfe");
+        if (wsfeToken != null)
+            result["wsfe"] = wsfeToken;
+            
+        var wsToken = AfipTokenService.GetCurrentToken("ws_sr_constancia_inscripcion");
+        if (wsToken != null)
+            result["ws_sr_constancia_inscripcion"] = wsToken;
+        
+        return result;
+    }
+
+    private void OnTokenEvent(string message)
+    {
+        AddLogEntry(message);
+        StateHasChanged();
+    }
+
+    private void AddLogEntry(string message)
+    {
+        _eventLog.Insert(0, new LogEntry { Timestamp = DateTime.Now, Message = message });
+        
+        // Mantener solo los últimos 20 eventos
+        if (_eventLog.Count > 20)
+        {
+            _eventLog.RemoveAt(_eventLog.Count - 1);
+        }
+    }
+
+    private void ClearLog()
+    {
+        _eventLog.Clear();
+        StateHasChanged();
+    }
+
+    private async void OnTokenObtainedGlobal(object? sender, AfipTokenEventArgs e)
+    {
+        AddLogEntry($"🎉 Token obtenido: {e.ServiceId}");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnTokenExpiredGlobal(object? sender, AfipTokenEventArgs e)
+    {
+        AddLogEntry($"⏰ Token expirado: {e.ServiceId}");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnTokenErrorGlobal(object? sender, AfipTokenErrorEventArgs e)
+    {
+        AddLogEntry($"❌ Error en token {e.ServiceId}: {e.ErrorMessage}");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        // Desuscribirse de eventos
+        AfipTokenService.TokenObtained -= OnTokenObtainedGlobal;
+        AfipTokenService.TokenExpired -= OnTokenExpiredGlobal;
+        AfipTokenService.TokenError -= OnTokenErrorGlobal;
+    }
+
+    private class LogEntry
+    {
+        public DateTime Timestamp { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+}
