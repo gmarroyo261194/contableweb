@@ -9,13 +9,42 @@ using Volo.Abp.Domain.Repositories;
 namespace ContableWeb.Services.Clientes;
 
 [Audited]
-public class ClienteAppService: CrudAppService<Cliente, ClienteDto, int, PagedAndSortedResultRequestDto, CreateUpdateClienteDto>,
-    IClienteAppService
+public class ClienteAppService : CrudAppService<Cliente, ClienteDto, int, ClientePagedAndSortedResultRequestDto,
+        CreateUpdateClienteDto>, IClienteAppService
 {
-    public ClienteAppService(IRepository<Cliente, int> repository) : base(repository)
+    private readonly IClienteRepository _clienteRepository;
+    public ClienteAppService(IRepository<Cliente, int> repository,
+        IClienteRepository clienteRepository) : base(repository)
     {
+        _clienteRepository = clienteRepository;
     }
 
+    public override async Task<PagedResultDto<ClienteDto>> GetListAsync(ClientePagedAndSortedResultRequestDto input)
+    {
+        var filter = ObjectMapper.Map<ClientePagedAndSortedResultRequestDto, ClientesFilter>(input);
+        var sorting = (string.IsNullOrEmpty(input.Sorting) ? "Nombre ASC" : input.Sorting);
+        
+        var listado = await _clienteRepository.GetListAsync(  input.SkipCount, input.MaxResultCount,sorting, filter);
+        var queryable = listado.AsQueryable();
+        var totalCount = await _clienteRepository.GetTotalCountAsync(filter);
+
+        var query = from cliente in queryable
+                    select cliente;
+        
+        var queryResult = await AsyncExecuter.ToListAsync(query);
+        
+        var clientesDtos = queryResult.Select(x =>
+        {
+            var clienteDto = ObjectMapper.Map<Cliente, ClienteDto>(x);
+            return clienteDto;
+        }).ToList();
+        
+        return new PagedResultDto<ClienteDto>(
+            totalCount,
+            clientesDtos
+        );
+        
+    }
     public override async Task<ClienteDto> CreateAsync(CreateUpdateClienteDto input)
     {
         if(await GetDocumentoDuplicadoAsync(input.TipoDocumento, input.NumeroDocumento))

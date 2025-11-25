@@ -1,9 +1,9 @@
 ﻿@page "/clientes"
 @attribute [Authorize(ContableWebPermissions.Clientes.Default)]
 @using ContableWeb.Entities.Clientes
-@inject AbpBlazorMessageLocalizerHelper<ContableWebResource> LH
+@inject AbpBlazorMessageLocalizerHelper<ContableWebResource> Lh
 @inject IStringLocalizer<ContableWebResource> L
-@inherits AbpCrudPageBase<IClienteAppService, ClienteDto, int, PagedAndSortedResultRequestDto, CreateUpdateClienteDto>
+@inherits AbpCrudPageBase<IClienteAppService, ClienteDto, int, ClientePagedAndSortedResultRequestDto, CreateUpdateClienteDto>
 
 <Card>
     <CardHeader>
@@ -31,9 +31,15 @@
                   CurrentPage="CurrentPage"
                   TotalItems="TotalCount"
                   ShowPager="true"
-                  PageSize="PageSize">
+                  Sortable="true"
+                  Filterable="true"
+                  FilterMethod="DataGridFilterMethod.Contains"
+                  FilterMode="DataGridFilterMode.Default"
+                  PageSize="PageSize"
+                  Narrow="true"
+                  Hoverable="true">
             <DataGridColumns>
-                <DataGridEntityActionsColumn TItem="ClienteDto" @ref="@EntityActionsColumn">
+                <DataGridEntityActionsColumn TItem="ClienteDto" @ref="@EntityActionsColumn" Filterable="false" Sortable="false">
                     <DisplayTemplate>
                         <EntityActions TItem="ClienteDto" EntityActionsColumn="@EntityActionsColumn">
                             <EntityAction TItem="ClienteDto"
@@ -50,35 +56,47 @@
                 </DataGridEntityActionsColumn>
                 <DataGridColumn TItem="ClienteDto"
                                 Field="@nameof(ClienteDto.TipoDocumento)"
-                                Caption="@L["Tipo Documento"]">
+                                Caption="@L["Tipo Documento"]"
+                                Filterable="false"
+                                Sortable="true">
                     <DisplayTemplate>
                         @L[$"Enum:TipoDoc.{(int)context.TipoDocumento}"]
                     </DisplayTemplate>
-
                 </DataGridColumn>
                 <DataGridColumn TItem="ClienteDto"
                                 Field="@nameof(ClienteDto.NumeroDocumento)"
-                                Caption="@L["Numero Documento"]"></DataGridColumn>
+                                Caption="@L["Numero Documento"]"
+                                Filterable="true"
+                                Sortable="true">
+                    
+                </DataGridColumn>
                 <DataGridColumn TItem="ClienteDto"
                                 Field="@nameof(ClienteDto.Nombre)"
-                                Caption="@L["Razon Social"]"></DataGridColumn>
+                                Caption="@L["Razon Social"]"
+                                Filterable="true"
+                                Sortable="true">
+                </DataGridColumn>
                 <DataGridColumn TItem="ClienteDto"
                                 Field="@nameof(ClienteDto.CondicionIva)"
-                                Caption="@L["Cond. I.V.A."]">
+                                Caption="@L["Cond. I.V.A."]"
+                                Filterable="false"
+                                Sortable="true">
                     <DisplayTemplate>
                         @L[$"Enum:TipoCondIva.{(int)context.CondicionIva}"]
                     </DisplayTemplate>
                 </DataGridColumn>
                 <DataGridColumn TItem="ClienteDto"
                                 Field="@nameof(ClienteDto.Email)"
-                                Caption="@L["Email"]"></DataGridColumn>
+                                Caption="@L["Email"]"
+                                Filterable="true"
+                                Sortable="true">
+                </DataGridColumn>
             </DataGridColumns>
         </DataGrid>
     </CardBody>
 </Card>
 
 <Modal @ref="@CreateModal">
-    <ModalBackdrop/>
     <ModalContent IsCentered="true" Size="ModalSize.Large">
         <Form>
             <ModalHeader TextWeight="TextWeight.Bold">
@@ -89,7 +107,7 @@
             </ModalHeader>
             <ModalBody>
                 <Validations @ref="@CreateValidationsRef" Model="@NewEntity" ValidateOnLoad="false">
-                    <Validation MessageLocalizer="@LH.Localize">
+                    <Validation MessageLocalizer="@Lh.Localize">
                         <Row>
                             <Column ColumnSize="ColumnSize.Is3">
                                 <Field>
@@ -189,18 +207,17 @@
 </Modal>
 
 <Modal @ref="@EditModal">
-    <ModalBackdrop/>
     <ModalContent IsCentered="true" Size="ModalSize.Large">
         <Form>
             <ModalHeader>
                 <Icon Name="IconName.User" IconStyle="IconStyle.Solid" TextColor="TextColor.Primary" 
                      IconSize="IconSize.Large" Style="margin-right: 4px;" />
-                <ModalTitle>@EditingEntity?.Nombre</ModalTitle>
+                <ModalTitle>@EditingEntity.Nombre</ModalTitle>
                 <CloseButton Clicked="CloseEditModalAsync"/>
             </ModalHeader>
             <ModalBody>
                 <Validations @ref="@EditValidationsRef" Model="@EditingEntity" ValidateOnLoad="false">
-                    <Validation MessageLocalizer="@LH.Localize">
+                    <Validation MessageLocalizer="@Lh.Localize">
                         <Row>
                             <Column ColumnSize="ColumnSize.Is3">
                                 <Field>
@@ -307,6 +324,20 @@
         CreatePolicyName = ContableWebPermissions.Clientes.Create;
         UpdatePolicyName = ContableWebPermissions.Clientes.Edit;
         DeletePolicyName = ContableWebPermissions.Clientes.Delete;
+    }
+
+    protected override Task OnDataGridReadAsync(DataGridReadDataEventArgs<ClienteDto> e)
+    {
+        var nombre = e.Columns.FirstOrDefault(c => c.SearchValue != null && c.Field == "Nombre");
+        if (nombre != null) GetListInput.Nombre = nombre.SearchValue.ToString();
+        
+        var documento = e.Columns.FirstOrDefault(c => c.SearchValue != null && c.Field == "NumeroDocumento");
+        if (documento != null) GetListInput.NumeroDocumento = documento.SearchValue.ToString();
+        
+        var email = e.Columns.FirstOrDefault(c => c.SearchValue != null && c.Field == "Email");
+        if (email != null) GetListInput.Email = email.SearchValue.ToString();
+        
+        return base.OnDataGridReadAsync(e);
     }
 
 }

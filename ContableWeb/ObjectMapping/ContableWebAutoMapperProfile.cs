@@ -4,6 +4,7 @@ using ContableWeb.Entities.Clientes;
 using ContableWeb.Entities.Rubros;
 using ContableWeb.Entities.Servicios;
 using ContableWeb.Entities.TiposComprobantes;
+using ContableWeb.Services.Clientes;
 using ContableWeb.Services.Dtos.Books;
 using ContableWeb.Services.Dtos.Clientes;
 using ContableWeb.Services.Dtos.Rubros;
@@ -36,6 +37,6 @@ public class ContableWebAutoMapperProfile : Profile
         CreateMap<Cliente, ClienteDto>();
         CreateMap<CreateUpdateClienteDto, Cliente>();
         CreateMap<ClienteDto, CreateUpdateClienteDto>();
-        
+        CreateMap<ClientePagedAndSortedResultRequestDto, ClientesFilter>();
     }
 }
