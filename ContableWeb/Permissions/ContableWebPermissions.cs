@@ -37,6 +37,22 @@ public static class ContableWebPermissions
         public const string Delete = Default + ".Delete";
     }
     
+    public static class TiposDocumentos
+    {
+        public const string Default = GroupName + ".TiposDocumentos";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    
+    public static class TiposCondicionesIva
+    {
+        public const string Default = GroupName + ".TiposCondicionesIva";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    
     public static class Clientes
     {
         public const string Default = GroupName + ".Clientes";

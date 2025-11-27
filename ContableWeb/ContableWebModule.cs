@@ -328,6 +328,14 @@ public class ContableWebModule : AbpModule
         
         // Registrar servicio de facturación electrónica
         context.Services.AddScoped<ContableWeb.Services.Afip.IFacturacionElectronicaService, ContableWeb.Services.Afip.FacturacionElectronicaService>();
+        
+        // Registrar servicios de Padrón AFIP
+        context.Services.AddHttpClient("AfipPadron", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        context.Services.AddScoped<ContableWeb.Services.Afip.Padron.PadronA5Client>();
+        context.Services.AddScoped<ContableWeb.Services.Afip.Padron.IPadronAfipService, ContableWeb.Services.Afip.Padron.PadronAfipService>();
     }
 
     private void ConfigureUrls(IConfiguration configuration)

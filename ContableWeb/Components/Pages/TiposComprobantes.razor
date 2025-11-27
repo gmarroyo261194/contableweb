@@ -7,6 +7,7 @@
 @using Volo.Abp.BlazoriseUI
 @using Blazorise
 @using Blazorise.DataGrid
+@using ContableWeb.Components.Shared
 @using ContableWeb.Permissions
 @using ContableWeb.Localization
 @using ContableWeb.Services.Afip
@@ -34,17 +35,25 @@
                         @Localizer["NewTipoComprobante"]
                     </Button>
                 }
-            </Column>
-            <Column ColumnSize="ColumnSize.IsAuto">
-                <!-- Botón para obtener token AFIP y mostrar respuesta -->
-                <Button Color="Color.Info" Clicked="GetAfipTokenAsync">
-                    <Icon Name="IconName.Sync" /> Obtener Token AFIP
-                </Button>
-                <!-- Botón de prueba: mostrar ejemplo de SOAP Fault -->
-                <Button Color="Color.Warning" Class="ml-2" Clicked="ShowSampleAfipErrorAsync">
-                    <Icon Name="IconName.ExclamationCircle" /> Mostrar Ejemplo Error AFIP
+                <!-- Botón para sincronizar tipos de comprobantes desde AFIP -->
+                <Button Color="Color.Success" 
+                        Clicked="SincronizarDesdeAfipAsync"
+                        Class="ms-2"
+                        Loading="@_sincronizando">
+                    <Icon Name="IconName.Sync" />
+                    @(_sincronizando ? "Sincronizando..." : "Sincronizar desde AFIP")
                 </Button>
             </Column>
+            @* <Column ColumnSize="ColumnSize.IsAuto"> *@
+            @*     <!-- Botón para obtener token AFIP y mostrar respuesta --> *@
+            @*     <Button Color="Color.Info" Clicked="GetAfipTokenAsync"> *@
+            @*         <Icon Name="IconName.Sync" /> Obtener Token AFIP *@
+            @*     </Button> *@
+            @*     <!-- Botón de prueba: mostrar ejemplo de SOAP Fault --> *@
+            @*     <Button Color="Color.Warning" Class="ml-2" Clicked="ShowSampleAfipErrorAsync"> *@
+            @*         <Icon Name="IconName.ExclamationCircle" /> Mostrar Ejemplo Error AFIP *@
+            @*     </Button> *@
+            @* </Column> *@
         </Row>
     </CardHeader>
     <CardBody>
@@ -72,11 +81,11 @@
                     </DisplayTemplate>
                 </DataGridEntityActionsColumn>
                 <DataGridColumn TItem="TipoComprobanteDto"
+                                Field="@nameof(TipoComprobanteDto.CodigoAfip)"
+                                Caption="Código AFIP"></DataGridColumn>
+                <DataGridColumn TItem="TipoComprobanteDto"
                                 Field="@nameof(TipoComprobanteDto.Nombre)"
                                 Caption="@Localizer["Nombre"]"></DataGridColumn>
-                <DataGridColumn TItem="TipoComprobanteDto"
-                                Field="@nameof(TipoComprobanteDto.Descripcion)"
-                                Caption="@Localizer["Descripcion"]"></DataGridColumn>
                 <DataGridColumn TItem="TipoComprobanteDto"
                                 Field="@nameof(TipoComprobanteDto.Abreviatura)"
                                 Caption="@Localizer["Codigo"]"></DataGridColumn>
@@ -100,12 +109,12 @@
 </Card>
 
 <!-- Componente para mostrar el estado del token AFIP -->
-<div class="mt-4">
-    <AfipTokenStatus ServiceId="wsfe" 
-                     ShowTokenDetails="true"
-                     OnTokenObtained="OnAfipTokenObtained"
-                     OnTokenError="OnAfipTokenError" />
-</div>
+@* <div class="mt-4"> *@
+@*     <AfipTokenStatus ServiceId="wsfe"  *@
+@*                      ShowTokenDetails="true" *@
+@*                      OnTokenObtained="OnAfipTokenObtained" *@
+@*                      OnTokenError="OnAfipTokenError" /> *@
+@* </div> *@
 
 <Modal @ref="@CreateModal">
     <ModalContent IsCentered="true">
@@ -118,16 +127,16 @@
                 <Validations @ref="@CreateValidationsRef" Model="@NewEntity" ValidateOnLoad="false">
                     <Validation MessageLocalizer="@Lh.Localize">
                         <Field>
-                            <FieldLabel>Nombre</FieldLabel>
-                            <TextEdit @bind-Text="@NewEntity.Nombre">
+                            <FieldLabel>Código AFIP</FieldLabel>
+                            <NumericEdit TValue="int" @bind-Value="@NewEntity.CodigoAfip">
                                 <Feedback>
                                     <ValidationError/>
                                 </Feedback>
-                            </TextEdit>
+                            </NumericEdit>
                         </Field>
                         <Field>
-                            <FieldLabel>Descripcion Comprobante</FieldLabel>
-                            <TextEdit @bind-Text="@NewEntity.Descripcion">
+                            <FieldLabel>Nombre</FieldLabel>
+                            <TextEdit @bind-Text="@NewEntity.Nombre">
                                 <Feedback>
                                     <ValidationError/>
                                 </Feedback>
@@ -241,6 +250,8 @@
 
 @code {
 
+    private bool _sincronizando = false;
+
     public TiposComprobantes()
     {
         CreatePolicyName = ContableWebPermissions.TiposComprobantes.Create;
@@ -254,6 +265,58 @@
     private AfipSoapFaultException? _afipSoapFault;
     private AfipWsaaException? _afipWsaaEx;
     private Exception? _afipException;
+
+    /// <summary>
+    /// Sincroniza los tipos de comprobantes desde AFIP
+    /// </summary>
+    private async Task SincronizarDesdeAfipAsync()
+    {
+        try
+        {
+            _sincronizando = true;
+            StateHasChanged();
+
+            Console.WriteLine("=== INICIANDO SINCRONIZACIÓN DE TIPOS DE COMPROBANTES ===");
+            
+            var resultado = await AppService.SincronizarDesdeAfipAsync();
+
+            if (resultado.Exitoso)
+            {
+                await Message.Success($"{resultado.Mensaje}");
+                Console.WriteLine($"✅ {resultado.Mensaje}");
+                Console.WriteLine($"   - Total obtenidos: {resultado.TotalObtenidos}");
+                Console.WriteLine($"   - Insertados: {resultado.Insertados}");
+                Console.WriteLine($"   - Actualizados: {resultado.Actualizados}");
+                
+                // Recargar la grilla
+                await GetEntitiesAsync();
+            }
+            else
+            {
+                await Message.Error($"Error: {resultado.Mensaje}");
+                Console.WriteLine($"❌ Error: {resultado.Mensaje}");
+            }
+
+            if (resultado.Errores.Any())
+            {
+                Console.WriteLine("⚠️ Errores encontrados:");
+                foreach (var error in resultado.Errores)
+                {
+                    Console.WriteLine($"   - {error}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error en sincronización: {ex.Message}");
+            await Message.Error($"Error inesperado: {ex.Message}");
+        }
+        finally
+        {
+            _sincronizando = false;
+            StateHasChanged();
+        }
+    }
 
     private async Task GetAfipTokenAsync()
     {

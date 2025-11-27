@@ -112,10 +112,24 @@ public class ContableWebMenuContributor : IMenuContributor
                     ))
                 .AddItem(
                     new ApplicationMenuItem(
+                        "Menu:TiposDocumentos",
+                        "Tipos de Documentos",
+                        icon: "fa fa-id-card",
+                        url: "/tipos-documentos"
+                    ))
+                .AddItem(
+                    new ApplicationMenuItem(
+                        "Menu:TiposCondicionesIva",
+                        "Condiciones IVA",
+                        icon: "fa fa-percentage",
+                        url: "/tipos-condiciones-iva"
+                    ))
+                .AddItem(
+                    new ApplicationMenuItem(
                         "Menu:FacturasTipoC",
-                        "Facturas Tipo C",
+                        "Generacion Comprobantes",
                         icon: "fa fa-file-invoice",
-                        url: "/facturas-tipo-c"
+                        url: "/facturas"
                     ))
             );
         
@@ -153,6 +167,13 @@ public class ContableWebMenuContributor : IMenuContributor
                     "Dashboard AFIP",
                     icon: "fa fa-key",
                     url: "/afip-dashboard"
+                ))
+            .AddItem(
+                new ApplicationMenuItem(
+                    "Menu:PadronAfip",
+                    "Consulta Padrón AFIP",
+                    icon: "fa fa-search",
+                    url: "/padron-afip"
                 ))
             .AddItem(
                 new ApplicationMenuItem(

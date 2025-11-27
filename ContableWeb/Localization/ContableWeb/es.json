@@ -51,6 +51,22 @@
     "Permission:Clientes.Edit": "Editar clientes",
     "Permission:Clientes.Delete": "Eliminar clientes",
     
+    "Permission:TiposDocumentos": "Tipos de Documentos",
+    "Permission:TiposDocumentos.Create": "Crear nuevos tipos de documentos",
+    "Permission:TiposDocumentos.Edit": "Editar tipos de documentos",
+    "Permission:TiposDocumentos.Delete": "Eliminar tipos de documentos",
+    
+    "Permission:TiposCondicionesIva": "Tipos de Condiciones IVA",
+    "Permission:TiposCondicionesIva.Create": "Crear nuevos tipos de condiciones IVA",
+    "Permission:TiposCondicionesIva.Edit": "Editar tipos de condiciones IVA",
+    "Permission:TiposCondicionesIva.Delete": "Eliminar tipos de condiciones IVA",
+    
+    "TiposDocumentos": "Tipos de Documentos",
+    "NewTipoDocumento": "Nuevo Tipo de Documento",
+    
+    "TiposCondicionesIva": "Condiciones IVA",
+    "NewTipoCondicionIva": "Nueva Condición IVA",
+    
     "RubroIsRequiredForCreatingServicio": "El rubro es obligatorio para crear un servicio.",
     "NoData":"Sin datos disponibles",
     

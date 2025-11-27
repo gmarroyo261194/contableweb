@@ -645,6 +645,38 @@ namespace ContableWeb.Services.Afip.WSFEv1
     }
 
     /// <summary>
+    /// Response para obtener tipos de documentos
+    /// </summary>
+    public class TipoDocumentoResponse
+    {
+        [XmlArray("ResultGet")]
+        [XmlArrayItem("DocTipo")]
+        public TipoDocumentoItem[]? ResultGet { get; set; }
+
+        [XmlArray("Errors")]
+        [XmlArrayItem("Err")]
+        public Err[]? Errors { get; set; }
+    }
+
+    /// <summary>
+    /// Item de tipo de documento
+    /// </summary>
+    public class TipoDocumentoItem
+    {
+        [XmlElement("Id")]
+        public int Id { get; set; }
+
+        [XmlElement("Desc")]
+        public string Desc { get; set; } = string.Empty;
+
+        [XmlElement("FchDesde")]
+        public string FchDesde { get; set; } = string.Empty;
+
+        [XmlElement("FchHasta")]
+        public string FchHasta { get; set; } = string.Empty;
+    }
+
+    /// <summary>
     /// Constantes para condiciones frente al IVA más comunes
     /// </summary>
     public static class CondicionesIVA

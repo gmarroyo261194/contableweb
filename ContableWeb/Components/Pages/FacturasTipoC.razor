@@ -1,11 +1,11 @@
-﻿@page "/facturas-tipo-c"
+﻿@page "/facturas"
 @using ContableWeb.Components.Shared
 @using ContableWeb.Services.Afip
 @using ContableWeb.Services.Afip.WSFEv1
 @inject IFacturacionElectronicaService FacturacionService
 @inject IStringLocalizer<ContableWebResource> L
 
-<PageTitle>Facturas Tipo C - Consumidor Final</PageTitle>
+<PageTitle>Emisión de Comprobantes Electrónicos</PageTitle>
 
 <Row>
     <Column ColumnSize="ColumnSize.Is12">
@@ -13,14 +13,14 @@
             <CardHeader>
                 <CardTitle>
                     <Icon Name="IconName.FilePdf" Class="me-2"/>
-                    Generar Factura Tipo C (Consumidor Final)
+                    Generar Comprobante Electrónico
                 </CardTitle>
             </CardHeader>
             <CardBody>
                 <Alert Color="Color.Info">
                     <Icon Name="IconName.InfoCircle" Class="me-2"/>
-                    <strong>Factura Tipo C:</strong> Para consumidores finales. No requiere datos del cliente como CUIT/DNI.
-                    Se usa el código 99 (Consumidor Final) automáticamente.
+                    <strong>Emisión de Comprobantes:</strong> Seleccione el tipo de comprobante que desea generar. 
+                    Los campos requeridos variarán según el tipo seleccionado.
                 </Alert>
             </CardBody>
         </Card>
@@ -36,6 +36,25 @@
             </CardHeader>
             <CardBody>
                 <Validations @ref="validaciones" Model="@_datosFactura" ValidateOnLoad="false">
+                    <!-- Tipo de Comprobante -->
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is12">
+                            <Field>
+                                <FieldLabel>Tipo de Comprobante</FieldLabel>
+                                <Select TValue="int" @bind-SelectedValue="_tipoComprobanteSeleccionado" Disabled="@(_tiposComprobante.Count == 0 || _isProcessing)">
+                                    <SelectItem Value="0">Seleccione un tipo de comprobante...</SelectItem>
+                                    @foreach (var tipo in _tiposComprobante)
+                                    {
+                                        <SelectItem Value="@tipo.Id">@tipo.Id - @tipo.Descripcion</SelectItem>
+                                    }
+                                </Select>
+                                <FieldHelp>Seleccione el tipo de comprobante que desea emitir</FieldHelp>
+                            </Field>
+                        </Column>
+                    </Row>
+
+                    <Divider Class="my-3" />
+
                     <Row>
                         <Column ColumnSize="ColumnSize.Is6">
                             <Field>
@@ -184,7 +203,7 @@
                     {
                         <Alert Color="Color.Warning" Class="mt-2">
                             <Icon Name="IconName.ExclamationTriangle" Class="me-2"/>
-                            Debe agregar al menos un item para generar la factura.
+                            Debe agregar al menos un item para generar el comprobante.
                         </Alert>
                     }
 
@@ -211,9 +230,9 @@
                                     <Icon Name="IconName.ArrowAltCircleDown"/> Limpiar
                                 </Button>
                                 <Button Color="Color.Success" Clicked="GenerarFactura" 
-                                        Disabled="_isProcessing || !_datosFactura.Items.Any()">
+                                        Disabled="_isProcessing || !_datosFactura.Items.Any() || _tipoComprobanteSeleccionado == 0">
                                     <Icon Name="@(_isProcessing ? IconName.ArrowAltCircleDown : IconName.FilePdf)"/> 
-                                    @(_isProcessing ? "Generando..." : "Generar Factura")
+                                    @(_isProcessing ? "Generando..." : "Generar Comprobante")
                                 </Button>
                             </div>
                         </div>
@@ -241,7 +260,7 @@
                     @if (_ultimoResultado.Exitoso)
                     {
                         <Alert Color="Color.Success">
-                            <h6>¡Factura generada exitosamente!</h6>
+                            <h6>¡Comprobante generado exitosamente!</h6>
                             <div><strong>Número:</strong> @_ultimoResultado.NumeroComprobante</div>
                             <div><strong>CAE:</strong> @_ultimoResultado.CAE</div>
                             <div><strong>Vence:</strong> @_ultimoResultado.FechaVencimientoCAE</div>
@@ -264,7 +283,7 @@
                     else
                     {
                         <Alert Color="Color.Danger">
-                            <h6>Error generando factura</h6>
+                            <h6>Error generando comprobante</h6>
                             <div>@_ultimoResultado.Error</div>
                             
                             @if (_ultimoResultado.Errores.Any())
@@ -282,22 +301,22 @@
             </Card>
         }
 
-        @if (_tiposComprobante.Any())
-        {
-            <Card Class="mt-4">
-                <CardHeader>
-                    <CardTitle>Tipos de Comprobante Disponibles</CardTitle>
-                </CardHeader>
-                <CardBody>
-                    <div class="small">
-                        @foreach (var tipo in _tiposComprobante.Take(5))
-                        {
-                            <div>@tipo.Id - @tipo.Descripcion</div>
-                        }
-                    </div>
-                </CardBody>
-            </Card>
-        }
+        @* @if (_tiposComprobante.Any()) *@
+        @* { *@
+        @*     <Card Class="mt-4"> *@
+        @*         <CardHeader> *@
+        @*             <CardTitle>Tipos de Comprobante Disponibles</CardTitle> *@
+        @*         </CardHeader> *@
+        @*         <CardBody> *@
+        @*             <div class="small"> *@
+        @*                 @foreach (var tipo in _tiposComprobante.Take(5)) *@
+        @*                 { *@
+        @*                     <div>@tipo.Id - @tipo.Descripcion</div> *@
+        @*                 } *@
+        @*             </div> *@
+        @*         </CardBody> *@
+        @*     </Card> *@
+        @* } *@
     </Column>
 </Row>
 
@@ -305,7 +324,9 @@
     private DatosFacturaTipoC _datosFactura = new();
     private FacturaElectronicaResult? _ultimoResultado;
     private List<TipoComprobanteInfo> _tiposComprobante = new();
+    private int _tipoComprobanteSeleccionado = 0;
     private bool _isProcessing = false;
+    private bool _isLoadingTipos = true;
     private Validations? validaciones;
 
     protected override async Task OnInitializedAsync()
@@ -324,8 +345,10 @@
         // Agregar un item de ejemplo
         AgregarItem();
 
-        // Cargar tipos de comprobante
+        // Cargar tipos de comprobante desde AFIP
         await CargarTiposComprobante();
+        
+        _isLoadingTipos = false;
     }
 
     private void AgregarItem()
@@ -356,27 +379,49 @@
             return;
         }
 
+        if (_tipoComprobanteSeleccionado <= 0)
+        {
+            Console.WriteLine("❌ Debe seleccionar un tipo de comprobante");
+            return;
+        }
+
         _isProcessing = true;
         _ultimoResultado = null;
         StateHasChanged();
 
         try
         {
-            Console.WriteLine("=== INICIANDO GENERACIÓN DE FACTURA TIPO C ===");
+            Console.WriteLine("=== INICIANDO GENERACIÓN DE COMPROBANTE ===");
+            Console.WriteLine($"Tipo de comprobante: {_tipoComprobanteSeleccionado}");
+            Console.WriteLine($"Cliente: {_datosFactura.Cliente.Nombre}");
+            Console.WriteLine($"Total: ${_datosFactura.ImporteTotal:F2}");
             
-            _ultimoResultado = await FacturacionService.GenerarFacturaTipoCAsync(_datosFactura);
+            // TODO: Aquí se debe implementar la generación genérica según el tipo seleccionado
+            // Por ahora solo soporta Tipo C (código 11)
+            if (_tipoComprobanteSeleccionado == 11) // Factura C
+            {
+                _ultimoResultado = await FacturacionService.GenerarFacturaTipoCAsync(_datosFactura);
+            }
+            else
+            {
+                _ultimoResultado = new FacturaElectronicaResult
+                {
+                    Exitoso = false,
+                    Error = $"El tipo de comprobante {_tipoComprobanteSeleccionado} aún no está implementado en esta versión."
+                };
+            }
             
             Console.WriteLine($"Resultado: {(_ultimoResultado.Exitoso ? "EXITOSO" : "ERROR")}");
             
             if (_ultimoResultado.Exitoso)
             {
                 Console.WriteLine($"CAE obtenido: {_ultimoResultado.CAE}");
-                Console.WriteLine($"Número de factura: {_ultimoResultado.NumeroComprobante}");
+                Console.WriteLine($"Número de comprobante: {_ultimoResultado.NumeroComprobante}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Excepción generando factura: {ex.Message}");
+            Console.WriteLine($"Excepción generando comprobante: {ex.Message}");
             _ultimoResultado = new FacturaElectronicaResult
             {
                 Exitoso = false,
@@ -416,12 +461,22 @@
     {
         try
         {
+            Console.WriteLine("=== CARGANDO TIPOS DE COMPROBANTE DESDE AFIP ===");
             _tiposComprobante = await FacturacionService.ObtenerTiposComprobanteAsync();
+            Console.WriteLine($"✅ Se cargaron {_tiposComprobante.Count} tipos de comprobante");
+            
+            // Mostrar los primeros 5 en consola
+            foreach (var tipo in _tiposComprobante.Take(5))
+            {
+                Console.WriteLine($"  - {tipo.Id}: {tipo.Descripcion}");
+            }
+            
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error cargando tipos de comprobante: {ex.Message}");
+            Console.WriteLine($"❌ Error cargando tipos de comprobante: {ex.Message}");
+            _tiposComprobante = new List<TipoComprobanteInfo>();
         }
     }
 
@@ -437,6 +492,7 @@
             }
         };
         
+        _tipoComprobanteSeleccionado = 0;
         _ultimoResultado = null;
         StateHasChanged();
     }

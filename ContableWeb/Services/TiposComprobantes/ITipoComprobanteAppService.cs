@@ -10,5 +10,9 @@ public interface ITipoComprobanteAppService: ICrudAppService<
     PagedAndSortedResultRequestDto,
     CreateUpdateTipoComprobanteDto>
 {
-    
+    /// <summary>
+    /// Sincroniza los tipos de comprobantes desde AFIP a la base de datos
+    /// </summary>
+    /// <returns>Resultado de la sincronización</returns>
+    Task<SincronizacionTiposComprobanteResult> SincronizarDesdeAfipAsync();
 }

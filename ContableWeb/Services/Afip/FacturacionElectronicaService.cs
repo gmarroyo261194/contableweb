@@ -1,4 +1,4 @@
-﻿using ContableWeb.Services.Afip.WSFEv1;
+﻿﻿using ContableWeb.Services.Afip.WSFEv1;
 using static ContableWeb.Services.Afip.WSFEv1.CondicionesIVA;
 
 namespace ContableWeb.Services.Afip
@@ -32,6 +32,11 @@ namespace ContableWeb.Services.Afip
         /// Obtiene las condiciones frente al IVA disponibles
         /// </summary>
         Task<List<CondicionIvaInfo>> ObtenerCondicionesIvaAsync();
+
+        /// <summary>
+        /// Obtiene los tipos de documento disponibles
+        /// </summary>
+        Task<List<TipoDocumentoInfo>> ObtenerTiposDocumentoAsync();
     }
 
     /// <summary>
@@ -258,6 +263,43 @@ namespace ContableWeb.Services.Afip
             }
         }
 
+        /// <summary>
+        /// Obtiene los tipos de documento disponibles
+        /// </summary>
+        public async Task<List<TipoDocumentoInfo>> ObtenerTiposDocumentoAsync()
+        {
+            try
+            {
+                var token = await _tokenService.GetValidTokenAsync("wsfe");
+                var auth = new FEAuthRequest
+                {
+                    Token = token.Token,
+                    Sign = token.Sign,
+                    Cuit = _cuitEmisor
+                };
+
+                var response = await _wsfeClient.ObtenerTiposDocumentoAsync(auth);
+                
+                if (response.ResultGet != null)
+                {
+                    return response.ResultGet.Select(td => new TipoDocumentoInfo
+                    {
+                        Id = td.Id,
+                        Descripcion = td.Desc,
+                        FechaDesde = td.FchDesde,
+                        FechaHasta = td.FchHasta
+                    }).ToList();
+                }
+
+                return new List<TipoDocumentoInfo>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obteniendo tipos de documento");
+                throw;
+            }
+        }
+
         private FECAERequest CrearRequestFacturaTipoC(DatosFacturaTipoC datos, int numeroComprobante)
         {
             Console.WriteLine($"=== CREANDO REQUEST FACTURA TIPO C ===");
@@ -472,5 +514,16 @@ namespace ContableWeb.Services.Afip
     {
         public int Id { get; set; }
         public string Descripcion { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Información de un tipo de documento
+    /// </summary>
+    public class TipoDocumentoInfo
+    {
+        public int Id { get; set; }
+        public string Descripcion { get; set; } = string.Empty;
+        public string FechaDesde { get; set; } = string.Empty;
+        public string FechaHasta { get; set; } = string.Empty;
     }
 }

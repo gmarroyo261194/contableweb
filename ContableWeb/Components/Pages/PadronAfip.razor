@@ -1,0 +1,380 @@
+﻿@page "/padron-afip"
+@using ContableWeb.Services.Afip.Padron
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IPadronAfipService PadronService
+@inject ILogger<PadronAfip> Logger
+
+<PageTitle>Consulta Padrón AFIP</PageTitle>
+
+<Card>
+    <CardHeader>
+        <Row Class="justify-content-between">
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <CardTitle>Consulta Padrón AFIP</CardTitle>
+            </Column>
+            <Column ColumnSize="ColumnSize.IsAuto">
+                <Button Color="Color.Info" Clicked="VerificarConectividadAsync">
+                    <Icon Name="IconName.Check" />
+                    Verificar Conectividad
+                </Button>
+            </Column>
+        </Row>
+    </CardHeader>
+    <CardBody>
+        <Row>
+            <Column ColumnSize="ColumnSize.Is8">
+                <Field>
+                    <FieldLabel>CUIT/CUIL a Consultar</FieldLabel>
+                    <NumericPicker TValue="long" @bind-Value="@_cuitConsulta" Placeholder="Ingrese CUIT/CUIL (sin guiones)">
+                    </NumericPicker>
+                </Field>
+            </Column>
+            <Column ColumnSize="ColumnSize.Is4" Class="d-flex align-items-end">
+                <Button Color="Color.Primary" Clicked="ConsultarAsync" Loading="@_consultando" Block>
+                    <Icon Name="IconName.Search" />
+                    Consultar
+                </Button>
+            </Column>
+        </Row>
+
+        @if (_conectividad.HasValue)
+        {
+            <Alert Color="@(_conectividad.Value ? Color.Success : Color.Danger)" Visible Class="mt-3">
+                <Icon Name="@(_conectividad.Value ? IconName.Check : IconName.Times)" />
+                @if (_conectividad.Value)
+                {
+                    <text>Conectividad OK con Padrón AFIP</text>
+                }
+                else
+                {
+                    <text>Error de conectividad con Padrón AFIP</text>
+                }
+            </Alert>
+        }
+
+        @if (_error != null)
+        {
+            <Alert Color="Color.Danger" Visible Class="mt-3">
+                <Icon Name="IconName.ExclamationTriangle" />
+                <strong>Error:</strong> @_error
+            </Alert>
+        }
+
+        @if (_resultado != null && _resultado.Persona != null)
+        {
+            @* Mostrar error de AFIP si existe *@
+            @if (_resultado.Persona.ErrorConstancia != null && _resultado.Persona.ErrorConstancia.Errores != null)
+            {
+                <Alert Color="Color.Warning" Visible Class="mt-3">
+                    <Icon Name="IconName.ExclamationTriangle" />
+                    <Heading Size="HeadingSize.Is5">AFIP reporta el siguiente problema:</Heading>
+                    @foreach (var error in _resultado.Persona.ErrorConstancia.Errores)
+                    {
+                        <p><strong>@error</strong></p>
+                    }
+                    @if (_resultado.Persona.ErrorConstancia.IdPersona > 0)
+                    {
+                        <p class="mt-2 mb-0">
+                            <small>CUIT: @_resultado.Persona.ErrorConstancia.IdPersona</small>
+                        </p>
+                    }
+                </Alert>
+                
+                @* Si solo hay error, no mostrar más datos *@
+                @if (_resultado.Persona.DatosGenerales == null)
+                {
+                    @if (_resultado.Metadata != null)
+                    {
+                        <Divider Class="mt-4" />
+                        <Text>
+                            <small class="text-muted">
+                                Consulta realizada: @_resultado.Metadata.FechaHora.ToString("dd/MM/yyyy HH:mm:ss")
+                                | Servidor: @_resultado.Metadata.Servidor
+                            </small>
+                        </Text>
+                    }
+                }
+            }
+            
+            @if (_resultado.Persona.DatosGenerales != null)
+            {
+                <Divider Class="mt-4" />
+                
+                <Heading Size="HeadingSize.Is4" Class="mt-3">Datos Generales</Heading>
+                
+                var datos = _resultado.Persona.DatosGenerales;
+                
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>CUIT/CUIL</FieldLabel>
+                            <TextEdit Text="@datos.IdPersona.ToString()" ReadOnly />
+                        </Field>
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>Tipo de Persona</FieldLabel>
+                            <TextEdit Text="@datos.TipoPersona" ReadOnly />
+                        </Field>
+                    </Column>
+                </Row>
+                
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is12">
+                        <Field>
+                            <FieldLabel>Razón Social / Nombre Completo</FieldLabel>
+                            <TextEdit Text="@(datos.RazonSocial ?? $"{datos.Apellido}, {datos.Nombre}")" ReadOnly />
+                        </Field>
+                    </Column>
+                </Row>
+                
+                @if (datos.DomicilioFiscal != null)
+                {
+                    <Heading Size="HeadingSize.Is5" Class="mt-3">Domicilio Fiscal</Heading>
+                    
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is12">
+                            <Field>
+                                <FieldLabel>Dirección</FieldLabel>
+                                <TextEdit Text="@datos.DomicilioFiscal.Direccion" ReadOnly />
+                            </Field>
+                        </Column>
+                    </Row>
+                    
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is4">
+                            <Field>
+                                <FieldLabel>Localidad</FieldLabel>
+                                <TextEdit Text="@datos.DomicilioFiscal.Localidad" ReadOnly />
+                            </Field>
+                        </Column>
+                        <Column ColumnSize="ColumnSize.Is4">
+                            <Field>
+                                <FieldLabel>Provincia</FieldLabel>
+                                <TextEdit Text="@datos.DomicilioFiscal.DescripcionProvincia" ReadOnly />
+                            </Field>
+                        </Column>
+                        <Column ColumnSize="ColumnSize.Is4">
+                            <Field>
+                                <FieldLabel>Código Postal</FieldLabel>
+                                <TextEdit Text="@datos.DomicilioFiscal.CodigoPostal" ReadOnly />
+                            </Field>
+                        </Column>
+                    </Row>
+                }
+                
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>Estado Clave</FieldLabel>
+                            <TextEdit Text="@datos.EstadoClave" ReadOnly />
+                        </Field>
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>Mes de Cierre</FieldLabel>
+                            <TextEdit Text="@datos.MesCierre.ToString()" ReadOnly />
+                        </Field>
+                    </Column>
+                </Row>
+            }
+            
+            @if (_resultado.Persona.DatosRegimenGeneral?.Actividades != null && _resultado.Persona.DatosRegimenGeneral.Actividades.Any())
+            {
+                <Heading Size="HeadingSize.Is4" Class="mt-4">Actividades</Heading>
+                
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHeaderCell>Orden</TableHeaderCell>
+                            <TableHeaderCell>Descripción</TableHeaderCell>
+                            <TableHeaderCell>Período</TableHeaderCell>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        @foreach (var act in _resultado.Persona.DatosRegimenGeneral.Actividades.OrderBy(a => a.Orden))
+                        {
+                            <TableRow>
+                                <TableRowCell>@act.Orden</TableRowCell>
+                                <TableRowCell>@act.DescripcionActividad</TableRowCell>
+                                <TableRowCell>@act.Periodo</TableRowCell>
+                            </TableRow>
+                        }
+                    </TableBody>
+                </Table>
+            }
+            
+            @if (_resultado.Persona.DatosMonotributo?.CategoriaMonotributo != null)
+            {
+                <Heading Size="HeadingSize.Is4" Class="mt-4">Datos Monotributo</Heading>
+                
+                var cat = _resultado.Persona.DatosMonotributo.CategoriaMonotributo;
+                
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>Categoría</FieldLabel>
+                            <TextEdit Text="@cat.DescripcionCategoria" ReadOnly />
+                        </Field>
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>Período</FieldLabel>
+                            <TextEdit Text="@cat.Periodo.ToString()" ReadOnly />
+                        </Field>
+                    </Column>
+                </Row>
+            }
+            
+            @if (_resultado.Persona.DatosRegimenGeneral?.Impuestos != null && _resultado.Persona.DatosRegimenGeneral.Impuestos.Any())
+            {
+                <Heading Size="HeadingSize.Is4" Class="mt-4">Impuestos Régimen General</Heading>
+                
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHeaderCell>ID</TableHeaderCell>
+                            <TableHeaderCell>Impuesto</TableHeaderCell>
+                            <TableHeaderCell>Estado</TableHeaderCell>
+                            <TableHeaderCell>Período</TableHeaderCell>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        @foreach (var imp in _resultado.Persona.DatosRegimenGeneral.Impuestos)
+                        {
+                            <TableRow>
+                                <TableRowCell>@imp.IdImpuesto</TableRowCell>
+                                <TableRowCell>@imp.DescripcionImpuesto</TableRowCell>
+                                <TableRowCell>
+                                    <Badge Color="@(imp.EstadoImpuesto == "AC" || imp.EstadoImpuesto == "ACTIVO" ? Color.Success : Color.Secondary)">
+                                        @(imp.EstadoImpuesto == "AC" ? "ACTIVO" : imp.EstadoImpuesto)
+                                    </Badge>
+                                </TableRowCell>
+                                <TableRowCell>@imp.Periodo</TableRowCell>
+                            </TableRow>
+                        }
+                    </TableBody>
+                </Table>
+            }
+            
+            @if (_resultado.Persona.DatosRegimenGeneral?.Regimenes != null && _resultado.Persona.DatosRegimenGeneral.Regimenes.Any())
+            {
+                <Heading Size="HeadingSize.Is4" Class="mt-4">Regímenes Especiales</Heading>
+                
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHeaderCell>ID</TableHeaderCell>
+                            <TableHeaderCell>Descripción</TableHeaderCell>
+                            <TableHeaderCell>Tipo</TableHeaderCell>
+                            <TableHeaderCell>Impuesto ID</TableHeaderCell>
+                            <TableHeaderCell>Período</TableHeaderCell>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        @foreach (var reg in _resultado.Persona.DatosRegimenGeneral.Regimenes)
+                        {
+                            <TableRow>
+                                <TableRowCell>@reg.IdRegimen</TableRowCell>
+                                <TableRowCell>@reg.DescripcionRegimen</TableRowCell>
+                                <TableRowCell>
+                                    <Badge Color="Color.Info">@reg.TipoRegimen</Badge>
+                                </TableRowCell>
+                                <TableRowCell>@reg.IdImpuesto</TableRowCell>
+                                <TableRowCell>@reg.Periodo</TableRowCell>
+                            </TableRow>
+                        }
+                    </TableBody>
+                </Table>
+            }
+            
+            @if (_resultado.Metadata != null)
+            {
+                <Divider Class="mt-4" />
+                <Text>
+                    <small class="text-muted">
+                        Consulta realizada: @_resultado.Metadata.FechaHora.ToString("dd/MM/yyyy HH:mm:ss")
+                        | Servidor: @_resultado.Metadata.Servidor
+                    </small>
+                </Text>
+            }
+        }
+    </CardBody>
+</Card>
+
+@code {
+    private long _cuitConsulta;
+    private bool _consultando;
+    private bool? _conectividad;
+    private string? _error;
+    private PersonaReturn? _resultado;
+
+    private async Task VerificarConectividadAsync()
+    {
+        try
+        {
+            _error = null;
+            _conectividad = null;
+            
+            Logger.LogInformation("Verificando conectividad con Padrón AFIP");
+            
+            _conectividad = await PadronService.VerificarConectividadAsync();
+            
+            if (_conectividad.Value)
+            {
+                Logger.LogInformation("Conectividad OK");
+            }
+            else
+            {
+                Logger.LogWarning("Fallo en conectividad");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error verificando conectividad");
+            _error = $"Error: {ex.Message}";
+            _conectividad = false;
+        }
+    }
+
+    private async Task ConsultarAsync()
+    {
+        if (_cuitConsulta <= 0)
+        {
+            _error = "Ingrese un CUIT/CUIL válido";
+            return;
+        }
+        
+        try
+        {
+            _consultando = true;
+            _error = null;
+            _resultado = null;
+            StateHasChanged();
+            
+            Logger.LogInformation("Consultando CUIT/CUIL: {Cuit}", _cuitConsulta);
+            
+            _resultado = await PadronService.ConsultarPersonaAsync(_cuitConsulta);
+            
+            Logger.LogInformation("Consulta exitosa");
+            
+            // Log para debugging
+            if (_resultado.Persona?.DatosGenerales != null)
+            {
+                Console.WriteLine($"Persona consultada: {_resultado.Persona.DatosGenerales.RazonSocial ?? $"{_resultado.Persona.DatosGenerales.Apellido}, {_resultado.Persona.DatosGenerales.Nombre}"}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error consultando CUIT {Cuit}", _cuitConsulta);
+            _error = $"Error consultando padrón: {ex.Message}";
+        }
+        finally
+        {
+            _consultando = false;
+            StateHasChanged();
+        }
+    }
+}
+

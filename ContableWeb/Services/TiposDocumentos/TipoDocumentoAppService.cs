@@ -1,62 +1,62 @@
-﻿using ContableWeb.Entities.TiposComprobantes;
+﻿using ContableWeb.Entities.TiposDocumentos;
 using ContableWeb.Services.Afip;
-using ContableWeb.Services.Dtos.TiposComprobantes;
+using ContableWeb.Services.Dtos.TiposDocumentos;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Repositories;
 
-namespace ContableWeb.Services.TiposComprobantes;
+namespace ContableWeb.Services.TiposDocumentos;
 
 [Audited]
-public class TipoComprobanteAppService: CrudAppService<
-        TipoComprobante,
-        TipoComprobanteDto,
+public class TipoDocumentoAppService : CrudAppService<
+        TipoDocumento,
+        TipoDocumentoDto,
         int,
         PagedAndSortedResultRequestDto,
-        CreateUpdateTipoComprobanteDto>,
-    ITipoComprobanteAppService
+        CreateUpdateTipoDocumentoDto>,
+    ITipoDocumentoAppService
 {
     private readonly IFacturacionElectronicaService _facturacionElectronicaService;
-    private readonly ILogger<TipoComprobanteAppService> _logger;
+    private readonly ILogger<TipoDocumentoAppService> _logger;
 
-    public TipoComprobanteAppService(
-        IRepository<TipoComprobante, int> repository,
+    public TipoDocumentoAppService(
+        IRepository<TipoDocumento, int> repository,
         IFacturacionElectronicaService facturacionElectronicaService,
-        ILogger<TipoComprobanteAppService> logger) : base(repository)
+        ILogger<TipoDocumentoAppService> logger) : base(repository)
     {
         _facturacionElectronicaService = facturacionElectronicaService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Sincroniza los tipos de comprobantes desde AFIP a la base de datos
+    /// Sincroniza los tipos de documentos desde AFIP a la base de datos
     /// </summary>
-    public async Task<SincronizacionTiposComprobanteResult> SincronizarDesdeAfipAsync()
+    public async Task<SincronizacionTiposDocumentoResult> SincronizarDesdeAfipAsync()
     {
-        var result = new SincronizacionTiposComprobanteResult();
+        var result = new SincronizacionTiposDocumentoResult();
 
         try
         {
-            _logger.LogInformation("=== INICIANDO SINCRONIZACIÓN DE TIPOS DE COMPROBANTES DESDE AFIP ===");
+            _logger.LogInformation("=== INICIANDO SINCRONIZACIÓN DE TIPOS DE DOCUMENTOS DESDE AFIP ===");
 
-            // 1. Obtener tipos de comprobantes desde AFIP
-            var tiposAfip = await _facturacionElectronicaService.ObtenerTiposComprobanteAsync();
+            // 1. Obtener tipos de documentos desde AFIP
+            var tiposAfip = await _facturacionElectronicaService.ObtenerTiposDocumentoAsync();
             result.TotalObtenidos = tiposAfip.Count;
 
-            _logger.LogInformation($"Se obtuvieron {tiposAfip.Count} tipos de comprobantes desde AFIP");
+            _logger.LogInformation($"Se obtuvieron {tiposAfip.Count} tipos de documentos desde AFIP");
 
             if (!tiposAfip.Any())
             {
                 result.Exitoso = true;
-                result.Mensaje = "No se encontraron tipos de comprobantes en AFIP";
+                result.Mensaje = "No se encontraron tipos de documentos en AFIP";
                 return result;
             }
 
-            // 2. Obtener todos los tipos de comprobantes existentes en BD
+            // 2. Obtener todos los tipos de documentos existentes en BD
             var tiposExistentes = await Repository.GetListAsync();
 
-            // 3. Procesar cada tipo de comprobante de AFIP
+            // 3. Procesar cada tipo de documento de AFIP
             foreach (var tipoAfip in tiposAfip)
             {
                 try
@@ -67,10 +67,9 @@ public class TipoComprobanteAppService: CrudAppService<
                     if (tipoExistente != null)
                     {
                         // ACTUALIZAR registro existente
-                        tipoExistente.Nombre = tipoAfip.Descripcion;
+                        tipoExistente.Descripcion = tipoAfip.Descripcion;
                         tipoExistente.FechaDesde = ParseFechaAfip(tipoAfip.FechaDesde);
                         tipoExistente.FechaHasta = ParseFechaAfip(tipoAfip.FechaHasta);
-                        tipoExistente.EsFiscal = true; // Los tipos de AFIP son fiscales
                         tipoExistente.Enabled = true;
 
                         await Repository.UpdateAsync(tipoExistente);
@@ -81,13 +80,12 @@ public class TipoComprobanteAppService: CrudAppService<
                     else
                     {
                         // INSERTAR nuevo registro
-                        var nuevoTipo = new TipoComprobante
+                        var nuevoTipo = new TipoDocumento
                         {
                             CodigoAfip = tipoAfip.Id,
-                            Nombre = tipoAfip.Descripcion,
+                            Descripcion = tipoAfip.Descripcion,
                             FechaDesde = ParseFechaAfip(tipoAfip.FechaDesde),
                             FechaHasta = ParseFechaAfip(tipoAfip.FechaHasta),
-                            EsFiscal = true,
                             Enabled = true
                         };
 
@@ -119,7 +117,7 @@ public class TipoComprobanteAppService: CrudAppService<
             result.Exitoso = false;
             result.Mensaje = $"Error en sincronización: {ex.Message}";
             result.Errores.Add(ex.Message);
-            _logger.LogError(ex, "Error en sincronización de tipos de comprobantes");
+            _logger.LogError(ex, "Error en sincronización de tipos de documentos");
         }
 
         return result;
@@ -151,3 +149,4 @@ public class TipoComprobanteAppService: CrudAppService<
         return null;
     }
 }
+

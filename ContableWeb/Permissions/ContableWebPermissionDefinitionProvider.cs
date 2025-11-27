@@ -32,6 +32,16 @@ public class ContableWebPermissionDefinitionProvider : PermissionDefinitionProvi
         tiposComprobantesPermission.AddChild(ContableWebPermissions.TiposComprobantes.Edit, L("Permission:TiposComprobantes.Edit"));
         tiposComprobantesPermission.AddChild(ContableWebPermissions.TiposComprobantes.Delete, L("Permission:TiposComprobantes.Delete"));
       
+        var tiposDocumentosPermission = myGroup.AddPermission(ContableWebPermissions.TiposDocumentos.Default, L("Permission:TiposDocumentos"));
+        tiposDocumentosPermission.AddChild(ContableWebPermissions.TiposDocumentos.Create, L("Permission:TiposDocumentos.Create"));
+        tiposDocumentosPermission.AddChild(ContableWebPermissions.TiposDocumentos.Edit, L("Permission:TiposDocumentos.Edit"));
+        tiposDocumentosPermission.AddChild(ContableWebPermissions.TiposDocumentos.Delete, L("Permission:TiposDocumentos.Delete"));
+      
+        var tiposCondicionesIvaPermission = myGroup.AddPermission(ContableWebPermissions.TiposCondicionesIva.Default, L("Permission:TiposCondicionesIva"));
+        tiposCondicionesIvaPermission.AddChild(ContableWebPermissions.TiposCondicionesIva.Create, L("Permission:TiposCondicionesIva.Create"));
+        tiposCondicionesIvaPermission.AddChild(ContableWebPermissions.TiposCondicionesIva.Edit, L("Permission:TiposCondicionesIva.Edit"));
+        tiposCondicionesIvaPermission.AddChild(ContableWebPermissions.TiposCondicionesIva.Delete, L("Permission:TiposCondicionesIva.Delete"));
+      
         var clientesPermission = myGroup.AddPermission(ContableWebPermissions.Clientes.Default, L("Permission:Clientes"));
         clientesPermission.AddChild(ContableWebPermissions.Clientes.Create, L("Permission:Clientes.Create"));
         clientesPermission.AddChild(ContableWebPermissions.Clientes.Edit, L("Permission:Clientes.Edit"));

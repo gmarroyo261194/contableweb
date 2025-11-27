@@ -4,12 +4,16 @@ using ContableWeb.Entities.Clientes;
 using ContableWeb.Entities.Rubros;
 using ContableWeb.Entities.Servicios;
 using ContableWeb.Entities.TiposComprobantes;
+using ContableWeb.Entities.TiposDocumentos;
+using ContableWeb.Entities.TiposCondicionesIva;
 using ContableWeb.Services.Clientes;
 using ContableWeb.Services.Dtos.Books;
 using ContableWeb.Services.Dtos.Clientes;
 using ContableWeb.Services.Dtos.Rubros;
 using ContableWeb.Services.Dtos.Servicios;
 using ContableWeb.Services.Dtos.TiposComprobantes;
+using ContableWeb.Services.Dtos.TiposDocumentos;
+using ContableWeb.Services.Dtos.TiposCondicionesIva;
 
 namespace ContableWeb.ObjectMapping;
 
@@ -33,6 +37,14 @@ public class ContableWebAutoMapperProfile : Profile
         CreateMap<TipoComprobante, TipoComprobanteDto>();
         CreateMap<CreateUpdateTipoComprobanteDto, TipoComprobante>();
         CreateMap<TipoComprobanteDto, CreateUpdateTipoComprobanteDto>();
+        
+        CreateMap<TipoDocumento, TipoDocumentoDto>();
+        CreateMap<CreateUpdateTipoDocumentoDto, TipoDocumento>();
+        CreateMap<TipoDocumentoDto, CreateUpdateTipoDocumentoDto>();
+        
+        CreateMap<TipoCondicionIva, TipoCondicionIvaDto>();
+        CreateMap<CreateUpdateTipoCondicionIvaDto, TipoCondicionIva>();
+        CreateMap<TipoCondicionIvaDto, CreateUpdateTipoCondicionIvaDto>();
         
         CreateMap<Cliente, ClienteDto>();
         CreateMap<CreateUpdateClienteDto, Cliente>();

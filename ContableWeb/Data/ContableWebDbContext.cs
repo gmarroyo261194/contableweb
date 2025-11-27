@@ -14,6 +14,8 @@ using ContableWeb.Entities.Clientes;
 using ContableWeb.Entities.Rubros;
 using ContableWeb.Entities.Servicios;
 using ContableWeb.Entities.TiposComprobantes;
+using ContableWeb.Entities.TiposDocumentos;
+using ContableWeb.Entities.TiposCondicionesIva;
 using ContableWeb.Entities.Afip;
 
 namespace ContableWeb.Data;
@@ -24,6 +26,8 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
     public DbSet<Rubro> Rubros { get; set; } = default!;
     public DbSet<Servicio> Servicios { get; set; } = default!;
     public DbSet<TipoComprobante> TiposComprobantes { get; set; } = default!;
+    public DbSet<TipoDocumento> TiposDocumentos { get; set; } = default!;
+    public DbSet<TipoCondicionIva> TiposCondicionesIva { get; set; } = default!;
     public DbSet<Cliente> Clientes { get; set; } = default!;
     public DbSet<AfipTokenEntity> AfipTokens { get; set; } = default!;
 
@@ -96,8 +100,34 @@ public class ContableWebDbContext : AbpDbContext<ContableWebDbContext>
             b.ConfigureByConvention(); 
             b.Property(x => x.Nombre).IsRequired().HasMaxLength(50);
             b.Property(x => x.Abreviatura).HasMaxLength(5);
+            b.Property(x => x.FechaDesde);
+            b.Property(x => x.FechaHasta);
+            b.Property(x => x.EsFiscal).IsRequired().HasDefaultValue(true);
             b.Property(x => x.Enabled).HasDefaultValue(true);
             b.HasIndex(x => x.Nombre).IsUnique();
+            b.HasIndex(x => x.CodigoAfip).IsUnique();
+        });
+        
+        builder.Entity<TipoDocumento>(b =>
+        {
+            b.ToTable(DbTablePrefix + "TiposDocumentos",
+                DbSchema);
+            b.ConfigureByConvention(); 
+            b.Property(x => x.Descripcion).IsRequired().HasMaxLength(100);
+            b.Property(x => x.FechaDesde);
+            b.Property(x => x.FechaHasta);
+            b.Property(x => x.Enabled).HasDefaultValue(true);
+            b.HasIndex(x => x.CodigoAfip).IsUnique();
+        });
+        
+        builder.Entity<TipoCondicionIva>(b =>
+        {
+            b.ToTable(DbTablePrefix + "TiposCondicionesIva",
+                DbSchema);
+            b.ConfigureByConvention(); 
+            b.Property(x => x.Descripcion).IsRequired().HasMaxLength(100);
+            b.Property(x => x.Enabled).HasDefaultValue(true);
+            b.HasIndex(x => x.CodigoAfip).IsUnique();
         });
         
         builder.Entity<Cliente>(b =>
