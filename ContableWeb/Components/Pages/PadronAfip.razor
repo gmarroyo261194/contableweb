@@ -22,21 +22,21 @@
         </Row>
     </CardHeader>
     <CardBody>
-        <Row>
-            <Column ColumnSize="ColumnSize.Is8">
-                <Field>
-                    <FieldLabel>CUIT/CUIL a Consultar</FieldLabel>
+        <Field>
+            <FieldLabel>CUIT/CUIL a Consultar</FieldLabel>
+            <Row Gutter="(16, 16)">
+                <Column ColumnSize="ColumnSize.Is2">
                     <NumericPicker TValue="long" @bind-Value="@_cuitConsulta" Placeholder="Ingrese CUIT/CUIL (sin guiones)">
                     </NumericPicker>
-                </Field>
-            </Column>
-            <Column ColumnSize="ColumnSize.Is4" Class="d-flex align-items-end">
-                <Button Color="Color.Primary" Clicked="ConsultarAsync" Loading="@_consultando" Block>
-                    <Icon Name="IconName.Search" />
-                    Consultar
-                </Button>
-            </Column>
-        </Row>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is2">
+                    <Button Color="Color.Primary" Clicked="ConsultarAsync" Loading="@_consultando" Block>
+                        <Icon Name="IconName.Search" />
+                        Consultar
+                    </Button>
+                </Column>
+            </Row>
+        </Field>
 
         @if (_conectividad.HasValue)
         {
@@ -64,7 +64,7 @@
         @if (_resultado != null && _resultado.Persona != null)
         {
             @* Mostrar error de AFIP si existe *@
-            @if (_resultado.Persona.ErrorConstancia != null && _resultado.Persona.ErrorConstancia.Errores != null)
+            @if (_resultado.Persona.ErrorConstancia is { Errores: not null })
             {
                 <Alert Color="Color.Warning" Visible Class="mt-3">
                     <Icon Name="IconName.ExclamationTriangle" />
@@ -292,12 +292,25 @@
             @if (_resultado.Metadata != null)
             {
                 <Divider Class="mt-4" />
-                <Text>
-                    <small class="text-muted">
-                        Consulta realizada: @_resultado.Metadata.FechaHora.ToString("dd/MM/yyyy HH:mm:ss")
-                        | Servidor: @_resultado.Metadata.Servidor
-                    </small>
-                </Text>
+                <Row Class="align-items-center">
+                    <Column ColumnSize="ColumnSize.IsAuto" Class="flex-grow-1">
+                        <Text>
+                            <small class="text-muted">
+                                Consulta realizada: @_resultado.Metadata.FechaHora.ToString("dd/MM/yyyy HH:mm:ss")
+                                | Servidor: @_resultado.Metadata.Servidor
+                            </small>
+                        </Text>
+                    </Column>
+                    @if (_resultado.Persona.DatosGenerales != null)
+                    {
+                        <Column ColumnSize="ColumnSize.IsAuto">
+                            <Button Color="Color.Warning" Clicked="ConsultarAsync" Loading="@_consultando">
+                                <Icon Name="IconName.Add" />
+                                Registrar en el sistema
+                            </Button>
+                        </Column>    
+                    }
+                </Row>
             }
         }
     </CardBody>

@@ -28,8 +28,8 @@
 </Row>
 
 <!-- Formulario de factura -->
-<Row Class="mt-4">
-    <Column ColumnSize="ColumnSize.Is8">
+<Row Class="mt-1">
+    <Column ColumnSize="ColumnSize.Is12">
         <Card>
             <CardHeader>
                 <CardTitle>Datos de la Factura</CardTitle>
@@ -38,7 +38,7 @@
                 <Validations @ref="validaciones" Model="@_datosFactura" ValidateOnLoad="false">
                     <!-- Tipo de Comprobante -->
                     <Row>
-                        <Column ColumnSize="ColumnSize.Is12">
+                        <Column ColumnSize="ColumnSize.Is6">
                             <Field>
                                 <FieldLabel>Tipo de Comprobante</FieldLabel>
                                 <Select TValue="int" @bind-SelectedValue="_tipoComprobanteSeleccionado" Disabled="@(_tiposComprobante.Count == 0 || _isProcessing)">
@@ -219,32 +219,32 @@
                 </Validations>
 
                 <!-- Botones de acción -->
-                <Row Class="mt-4">
-                    <Column ColumnSize="ColumnSize.Is12">
-                        <div class="d-flex justify-content-between">
-                            <Button Color="Color.Info" Clicked="VerificarConexion" Disabled="_isProcessing">
-                                <Icon Name="IconName.Wifi"/> Verificar Conexión AFIP
-                            </Button>
-                            <div>
-                                <Button Color="Color.Secondary" Clicked="LimpiarFormulario" Disabled="_isProcessing" Class="me-2">
-                                    <Icon Name="IconName.ArrowAltCircleDown"/> Limpiar
-                                </Button>
-                                <Button Color="Color.Success" Clicked="GenerarFactura" 
-                                        Disabled="_isProcessing || !_datosFactura.Items.Any() || _tipoComprobanteSeleccionado == 0">
-                                    <Icon Name="@(_isProcessing ? IconName.ArrowAltCircleDown : IconName.FilePdf)"/> 
-                                    @(_isProcessing ? "Generando..." : "Generar Comprobante")
-                                </Button>
-                            </div>
-                        </div>
-                    </Column>
-                </Row>
+                @* <Row Class="mt-4"> *@
+                @*     <Column ColumnSize="ColumnSize.Is12"> *@
+                @*         <div class="d-flex justify-content-between"> *@
+                @*             <Button Color="Color.Info" Clicked="VerificarConexion" Disabled="_isProcessing"> *@
+                @*                 <Icon Name="IconName.Wifi"/> Verificar Conexión AFIP *@
+                @*             </Button> *@
+                @*             <div> *@
+                @*                 <Button Color="Color.Secondary" Clicked="LimpiarFormulario" Disabled="_isProcessing" Class="me-2"> *@
+                @*                     <Icon Name="IconName.ArrowAltCircleDown"/> Limpiar *@
+                @*                 </Button> *@
+                @*                 <Button Color="Color.Success" Clicked="GenerarFactura"  *@
+                @*                         Disabled="_isProcessing || !_datosFactura.Items.Any() || _tipoComprobanteSeleccionado == 0"> *@
+                @*                     <Icon Name="@(_isProcessing ? IconName.ArrowAltCircleDown : IconName.FilePdf)"/>  *@
+                @*                     @(_isProcessing ? "Generando..." : "Generar Comprobante") *@
+                @*                 </Button> *@
+                @*             </div> *@
+                @*         </div> *@
+                @*     </Column> *@
+                @* </Row> *@
             </CardBody>
         </Card>
     </Column>
 
     <!-- Panel de estado y resultado -->
     <Column ColumnSize="ColumnSize.Is4">
-        <AfipTokenStatus ServiceId="wsfe" ShowTokenDetails="false" />
+        @* <AfipTokenStatus ServiceId="wsfe" ShowTokenDetails="false" /> *@
         
         @if (_ultimoResultado != null)
         {
